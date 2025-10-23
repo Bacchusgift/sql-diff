@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"bufio"
 	"fmt"
 	"io"
 	"os"
@@ -353,8 +354,8 @@ func runInteractive() error {
 
 	// 读取源表 SQL
 	color.New(color.FgYellow, color.Bold).Println("📋 请粘贴源表的 CREATE TABLE 语句：")
-	color.New(color.FgWhite).Println("（粘贴完成后按 Ctrl+D 结束输入，macOS/Linux）")
-	color.New(color.FgWhite).Println("（或按 Ctrl+Z 然后 Enter，Windows）")
+	color.New(color.FgWhite).Println("（直接粘贴完整 SQL，粘贴完成后输入 'END' 或连续按两次 Enter）")
+	color.New(color.FgCyan).Println("（提示：建议在文本编辑器中准备好 SQL，然后直接粘贴）")
 	fmt.Println()
 
 	sourceSQL, err := readMultilineInput()
@@ -371,8 +372,8 @@ func runInteractive() error {
 
 	// 读取目标表 SQL
 	color.New(color.FgYellow, color.Bold).Println("📋 请粘贴目标表的 CREATE TABLE 语句：")
-	color.New(color.FgWhite).Println("（粘贴完成后按 Ctrl+D 结束输入，macOS/Linux）")
-	color.New(color.FgWhite).Println("（或按 Ctrl+Z 然后 Enter，Windows）")
+	color.New(color.FgWhite).Println("（直接粘贴完整 SQL，粘贴完成后输入 'END' 或连续按两次 Enter）")
+	color.New(color.FgCyan).Println("（提示：建议在文本编辑器中准备好 SQL，然后直接粘贴）")
 	fmt.Println()
 
 	targetSQL, err := readMultilineInput()
@@ -392,14 +393,44 @@ func runInteractive() error {
 }
 
 // readMultilineInput 从标准输入读取多行文本
+// 支持粘贴多行 SQL，使用特殊标记结束输入
 func readMultilineInput() (string, error) {
-	// 直接读取所有输入直到 EOF (Ctrl+D/Ctrl+Z)
-	data, err := io.ReadAll(os.Stdin)
-	if err != nil {
+	scanner := bufio.NewScanner(os.Stdin)
+	var lines []string
+	emptyLineCount := 0
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		trimmedLine := strings.TrimSpace(line)
+
+		// 方式1: 单独一行输入 END 结束（推荐）
+		if trimmedLine == "END" {
+			break
+		}
+
+		// 方式2: 连续两个空行结束（但保留 SQL 中的单个空行）
+		if trimmedLine == "" {
+			emptyLineCount++
+			if emptyLineCount >= 2 {
+				// 移除最后的空行
+				if len(lines) > 0 {
+					lines = lines[:len(lines)-1]
+				}
+				break
+			}
+		} else {
+			emptyLineCount = 0
+		}
+
+		lines = append(lines, line)
+	}
+
+	if err := scanner.Err(); err != nil && err != io.EOF {
 		return "", err
 	}
 
-	return string(data), nil
+	result := strings.Join(lines, "\n")
+	return strings.TrimSpace(result), nil
 }
 
 // processComparison 执行 SQL 比对逻辑
