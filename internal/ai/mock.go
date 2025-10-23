@@ -3,12 +3,12 @@ package ai
 import (
 	"fmt"
 
-	"github.com/youzi/sql-diff/internal/config"
+	"github.com/Bacchusgift/sql-diff/internal/config"
 )
 
 // MockProvider 模拟的 AI 提供商（用于测试）
 type MockProvider struct {
-	AnalyzeFunc    func(sourceDDL, targetDDL, diff string) (*AnalysisResult, error)
+	AnalyzeFunc     func(sourceDDL, targetDDL, diff string) (*AnalysisResult, error)
 	OptimizeSQLFunc func(sql string) (*OptimizationResult, error)
 }
 

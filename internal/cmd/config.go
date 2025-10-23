@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/Bacchusgift/sql-diff/internal/config"
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
-	"github.com/youzi/sql-diff/internal/config"
 )
 
 var (

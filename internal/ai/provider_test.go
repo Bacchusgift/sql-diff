@@ -4,7 +4,7 @@ package ai
 import (
 	"testing"
 
-	"github.com/youzi/sql-diff/internal/config"
+	"github.com/Bacchusgift/sql-diff/internal/config"
 )
 
 // TestParseAnalysisResponse 测试响应解析
