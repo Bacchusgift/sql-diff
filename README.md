@@ -70,31 +70,79 @@ ALTER TABLE users ADD INDEX idx_email (email);
 
 ## 📦 安装
 
-### macOS (Homebrew)
+### 🍺 macOS (Homebrew) - 推荐
+
+最简单的安装方式：
 
 ```bash
-# 添加 tap
-brew tap Bacchusgift/tap
-
-# 安装
-brew install sql-diff
-
-# 或者一条命令
+# 一条命令安装
 brew install Bacchusgift/tap/sql-diff
 ```
 
-### Go Install
+或者分步骤：
 
 ```bash
-go install github.com/Bacchusgift/sql-diff@latest
+# 1. 添加 tap
+brew tap Bacchusgift/tap
+
+# 2. 安装
+brew install sql-diff
+
+# 3. 验证安装
+sql-diff --version
 ```
 
-### 从源码构建
+**更新到最新版本：**
+```bash
+brew upgrade sql-diff
+```
+
+### 🐧 Linux / Windows
+
+#### 方式 1: 下载预编译二进制文件
+
+从 [GitHub Releases](https://github.com/Bacchusgift/sql-diff/releases) 下载对应平台的二进制文件：
+
+- **Linux AMD64**: `sql-diff-linux-amd64`
+- **Linux ARM64**: `sql-diff-linux-arm64`  
+- **Windows AMD64**: `sql-diff-windows-amd64.exe`
+- **Windows ARM64**: `sql-diff-windows-arm64.exe`
+
+**Linux/macOS 安装：**
+```bash
+# 下载（以 Linux AMD64 为例）
+wget https://github.com/Bacchusgift/sql-diff/releases/latest/download/sql-diff-linux-amd64
+
+# 赋予执行权限
+chmod +x sql-diff-linux-amd64
+
+# 移动到 PATH 目录
+sudo mv sql-diff-linux-amd64 /usr/local/bin/sql-diff
+
+# 验证
+sql-diff --version
+```
+
+**Windows 安装：**
+1. 下载 `sql-diff-windows-amd64.exe`
+2. 重命名为 `sql-diff.exe`
+3. 将文件移动到 PATH 目录（如 `C:\Windows\System32`）
+
+#### 方式 2: Go Install
+
+如果已安装 Go 1.21+：
+
+```bash
+go install github.com/Bacchusgift/sql-diff/cmd/sql-diff@latest
+```
+
+#### 方式 3: 从源码构建
 
 ```bash
 git clone https://github.com/Bacchusgift/sql-diff.git
 cd sql-diff
-go build -o sql-diff cmd/sql-diff/main.go
+make build
+sudo mv bin/sql-diff /usr/local/bin/
 ```
 
 ## 🚀 快速开始
