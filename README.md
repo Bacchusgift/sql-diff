@@ -7,12 +7,26 @@
 </p>
 
 <p align="center">
-  一个基于 AST 语法树的 SQL 表结构比对工具，支持生成 DDL 差异语句，可选接入 AI 大模型进行智能比对和优化建议。
+  一个基于 AST 语法树的 SQL 表结构比对工具，支持交互式多行输入，自动生成 DDL 差异语句，可选接入 AI 大模型进行智能比对和优化建议。
+</p>
+
+<p align="center">
+  <a href="https://bacchusgift.github.io/sql-diff/">📚 完整文档</a> ·
+  <a href="https://bacchusgift.github.io/sql-diff/guide/getting-started">🚀 快速开始</a> ·
+  <a href="https://bacchusgift.github.io/sql-diff/examples/basic">💡 示例</a> ·
+  <a href="https://github.com/Bacchusgift/sql-diff/issues">💬 问题反馈</a>
 </p>
 
 ---
 
 ## ✨ 特性
+
+### 🎯 交互式输入（新）
+支持多行 SQL 直接粘贴，完美解决换行符问题：
+- ✅ 从 Navicat、MySQL Workbench 等工具直接复制
+- ✅ 支持包含注释的复杂 SQL
+- ✅ 无需处理换行符和转义字符
+- ✅ 实时字符统计和友好提示
 
 ### 🔍 精准比对
 基于 AST 语法树解析，准确识别：
@@ -45,12 +59,14 @@ ALTER TABLE users ADD INDEX idx_email (email);
 
 ## 📚 文档
 
-- [**快速开始**](docs/QUICKSTART.md) - 5 分钟快速上手指南
-- [**使用示例**](docs/EXAMPLES.md) - 详细的使用示例
-- [**环境变量配置**](docs/ENV_CONFIG.md) - 使用环境变量配置 AI 功能
-- [**AI 功能指南**](docs/AI_GUIDE.md) - AI 智能分析配置和使用
-- [**架构设计**](docs/ARCHITECTURE.md) - 项目架构和设计思想
-- [**贡献指南**](CONTRIBUTING.md) - 如何为项目贡献
+**🌐 完整文档网站：[https://bacchusgift.github.io/sql-diff/](https://bacchusgift.github.io/sql-diff/)**
+
+- [🚀 快速开始](https://bacchusgift.github.io/sql-diff/guide/getting-started) - 5 分钟快速上手指南
+- [💻 命令行工具](https://bacchusgift.github.io/sql-diff/guide/cli) - 详细的使用说明
+- [🤖 AI 功能指南](https://bacchusgift.github.io/sql-diff/ai/guide) - AI 智能分析配置和使用
+- [💡 使用示例](https://bacchusgift.github.io/sql-diff/examples/basic) - 实际应用场景
+- [🏛️ 架构设计](https://bacchusgift.github.io/sql-diff/architecture) - 项目架构和设计思想
+- [🤝 贡献指南](https://bacchusgift.github.io/sql-diff/CONTRIBUTING) - 如何为项目贡献
 
 ## 📦 安装
 
@@ -70,26 +86,35 @@ go build -o sql-diff cmd/sql-diff/main.go
 
 ### 交互式模式（推荐）
 
-对于包含多行的复杂 SQL 语句，推荐使用交互式模式：
+对于多行 SQL 或从数据库工具复制的语句，交互式模式是最佳选择：
 
 ```bash
 # 启动交互式模式
 sql-diff -i
 
-# 交互式模式 + AI 分析
-sql-diff -i --ai
-
-# 交互式模式 + 输出到文件
-sql-diff -i -o output.sql
+# 按提示操作：
+# 1. 粘贴源表 SQL（支持多行）
+# 2. 按 Ctrl+D（macOS/Linux）或 Ctrl+Z（Windows）结束输入
+# 3. 粘贴目标表 SQL
+# 4. 再次按 Ctrl+D
+# 5. 自动生成 DDL！
 ```
 
-操作流程：
-1. 运行命令后，程序提示粘贴源表 SQL
-2. 直接粘贴（支持多行），粘贴完成后按 **Ctrl+D**（macOS/Linux）或 **Ctrl+Z 然后 Enter**（Windows）
-3. 接着粘贴目标表 SQL，再次按 **Ctrl+D**
-4. 程序自动比对并显示结果
+**交互式 + AI 分析：**
+```bash
+sql-diff -i --ai
+```
 
-### 基础用法
+**交互式 + 输出到文件：**
+```bash
+sql-diff -i -o migration.sql
+```
+
+### 命令行参数模式
+
+对于简单的单行 SQL，也可以使用命令行参数：
+
+### 基础比对
 
 比对两个表结构并生成 DDL 语句：
 
