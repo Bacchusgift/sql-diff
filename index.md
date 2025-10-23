@@ -17,6 +17,10 @@ hero:
       link: https://github.com/Bacchusgift/sql-diff
 
 features:
+  - icon: 🎯
+    title: 交互式输入
+    details: 支持多行 SQL 直接粘贴，从 Navicat、MySQL Workbench 等工具复制即用，无需处理换行符
+  
   - icon: 🔍
     title: 精准比对
     details: 基于 AST 语法树解析 CREATE TABLE 语句，准确识别新增列、修改列、删除列和索引变更
@@ -36,10 +40,6 @@ features:
   - icon: ⚙️
     title: 灵活配置
     details: 支持环境变量和配置文件两种方式，配置命令一键生成，CI/CD 集成简单
-  
-  - icon: 🔐
-    title: 安全设计
-    details: 删除操作自动注释，防止误删数据，环境变量管理敏感信息，不会泄露到代码仓库
 ---
 
 ## 🎯 为什么选择 SQL-Diff？
@@ -86,6 +86,16 @@ ALTER TABLE users ADD INDEX idx_email (email);
 
 ::: code-group
 
+```bash [交互式模式（推荐）]
+# 启动交互式模式
+sql-diff -i
+
+# 按提示粘贴源表 SQL（支持多行）
+# 按 Ctrl+D（Mac/Linux）或 Ctrl+Z（Windows）结束输入
+# 再粘贴目标表 SQL
+# 自动生成 DDL！
+```
+
 ```bash [安装]
 # 从源码构建
 git clone https://github.com/Bacchusgift/sql-diff.git
@@ -93,8 +103,8 @@ cd sql-diff
 make build
 ```
 
-```bash [配置]
-# 一键配置 AI 功能
+```bash [配置 AI]
+# 一键配置 AI 功能（可选）
 sql-diff config \
   --ai-enabled \
   --provider deepseek \
@@ -104,14 +114,14 @@ sql-diff config \
 source ~/.bashrc
 ```
 
-```bash [使用]
-# 基础比对
+```bash [命令行模式]
+# 简单 SQL 可用命令行参数
 sql-diff \
   -s "CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(100))" \
   -t "CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(100), email VARCHAR(255))"
 
-# AI 分析
-sql-diff -s "..." -t "..." --ai
+# 启用 AI 分析
+sql-diff -i --ai
 ```
 
 :::
@@ -119,6 +129,30 @@ sql-diff -s "..." -t "..." --ai
 ## 🌟 核心特性
 
 <div class="feature-grid">
+
+### 🎯 交互式输入模式
+
+<div class="feature-content">
+
+**一键启动，直接粘贴**
+
+```bash
+sql-diff -i
+```
+
+✅ **完美支持多行 SQL**  
+✅ **从数据库工具直接复制**  
+✅ **无需转义换行符**  
+✅ **实时字符统计**  
+✅ **友好操作提示**
+
+**使用场景：**
+- 从 Navicat/MySQL Workbench 复制表结构
+- 处理包含注释的复杂 SQL
+- 比对大型表结构（几十个字段）
+- 避免 Shell 转义字符问题
+
+</div>
 
 ### 分类显示 DDL
 
