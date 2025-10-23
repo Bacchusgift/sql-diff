@@ -321,6 +321,37 @@ func runInteractive() error {
 	infoColor.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 	fmt.Println()
 
+	// 提前加载配置，显示 AI 状态
+	cfg, err := config.LoadConfig(configPath)
+	if err != nil {
+		errorColor.Printf("✗ 加载配置失败: %v\n", err)
+		return err
+	}
+
+	// 如果命令行指定了 --ai，覆盖配置文件
+	if enableAI {
+		cfg.AI.Enabled = true
+	}
+
+	// 验证配置
+	if err := cfg.Validate(); err != nil {
+		errorColor.Printf("✗ 配置验证失败: %v\n", err)
+		return err
+	}
+
+	// 显示 AI 配置状态
+	if cfg.AI.Enabled {
+		color.New(color.FgGreen, color.Bold).Println("🤖 AI 智能分析: 已启用")
+		color.New(color.FgGreen).Printf("   提供商: %s\n", cfg.AI.Provider)
+		if cfg.AI.Model != "" {
+			color.New(color.FgGreen).Printf("   模型: %s\n", cfg.AI.Model)
+		}
+	} else {
+		color.New(color.FgWhite).Println("ℹ️  AI 智能分析: 未启用")
+		color.New(color.FgWhite).Println("   （可通过 --ai 参数或配置文件启用）")
+	}
+	fmt.Println()
+
 	// 读取源表 SQL
 	color.New(color.FgYellow, color.Bold).Println("📋 请粘贴源表的 CREATE TABLE 语句：")
 	color.New(color.FgWhite).Println("（粘贴完成后按 Ctrl+D 结束输入，macOS/Linux）")
@@ -356,24 +387,6 @@ func runInteractive() error {
 
 	successColor.Printf("✓ 已读取 %d 个字符\n", len(targetSQL))
 	fmt.Println()
-
-	// 加载配置
-	cfg, err := config.LoadConfig(configPath)
-	if err != nil {
-		errorColor.Printf("✗ 加载配置失败: %v\n", err)
-		return err
-	}
-
-	// 如果命令行指定了 --ai，覆盖配置文件
-	if enableAI {
-		cfg.AI.Enabled = true
-	}
-
-	// 验证配置
-	if err := cfg.Validate(); err != nil {
-		errorColor.Printf("✗ 配置验证失败: %v\n", err)
-		return err
-	}
 
 	// 调用核心比对逻辑
 	return processComparison(sourceSQL, targetSQL, cfg)
