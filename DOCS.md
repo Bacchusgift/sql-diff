@@ -18,7 +18,7 @@ npm install
 npm run docs:dev
 ```
 
-然后访问 http://localhost:5173
+然后访问 http://localhost:5173 (本地开发服务器)
 
 ### 构建生产版本
 

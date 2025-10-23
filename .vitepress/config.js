@@ -6,6 +6,13 @@ export default defineConfig({
   description: '基于 AST 的智能 SQL 表结构比对工具',
   lang: 'zh-CN',
   
+  // 忽略死链接检查
+  ignoreDeadLinks: [
+    // 忽略本地开发服务器链接
+    /^http:\/\/localhost/,
+    /^https:\/\/localhost/,
+  ],
+  
   head: [
     ['link', { rel: 'icon', href: '/favicon.ico' }],
     ['meta', { name: 'theme-color', content: '#00ADD8' }]

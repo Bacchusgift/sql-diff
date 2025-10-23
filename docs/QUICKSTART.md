@@ -189,10 +189,10 @@ AI 会分析变更并提供：
 
 ## 下一步
 
-- 📖 阅读 [完整文档](docs/EXAMPLES.md)
-- 🏗️ 了解 [架构设计](docs/ARCHITECTURE.md)
-- 🐛 [报告问题](https://github.com/youzi/sql-diff/issues)
-- 💡 [功能建议](https://github.com/youzi/sql-diff/issues)
+- 📖 阅读完整文档
+- 🏗️ 了解架构设计
+- 🐛 [报告问题](https://github.com/Bacchusgift/sql-diff/issues)
+- 💡 [功能建议](https://github.com/Bacchusgift/sql-diff/issues)
 
 ## 常见问题
 
