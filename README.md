@@ -264,22 +264,29 @@ git push origin 1.0.2
 
 **自动化流程会完成：**
 
-1. ✅ **跨平台编译** - 自动编译 6 个平台的二进制文件：
+1. ✅ **运行 CI 测试** - 确保代码质量：
+   - 代码格式检查 (`go fmt`)
+   - 代码质量检查 (`go vet`)
+   - 运行所有单元测试
+   - 多平台编译验证
+
+2. ✅ **跨平台编译** - 自动编译 6 个平台的二进制文件：
    - Linux (AMD64, ARM64)
    - macOS (Intel, Apple Silicon)
    - Windows (AMD64, ARM64)
 
-2. ✅ **创建 GitHub Release** - 自动创建发布页面并上传：
+3. ✅ **创建 GitHub Release** - 自动创建发布页面并上传：
    - 所有平台的二进制文件
    - SHA256 校验和文件
    - 自动生成的更新日志
 
-3. ✅ **生成 Homebrew 更新信息** - 在 Release 评论中提供：
-   - 更新后的 Formula 代码
-   - SHA256 校验和
-   - 详细的更新步骤
+4. 🍺 **自动更新 Homebrew Tap** - 完全自动化：
+   - 自动更新 Formula 文件
+   - 更新版本号和 SHA256
+   - 自动提交并推送
+   - 用户可立即 `brew upgrade sql-diff`
 
-4. 🚧 **Homebrew Tap 更新** - 目前需要手动更新（后续将自动化）
+> 🔑 **配置说明**: 首次使用需要配置 GitHub Token，详见 [HOMEBREW_AUTOMATION.md](./HOMEBREW_AUTOMATION.md)
 
 ### CI/CD 工作流
 
@@ -298,30 +305,28 @@ git push origin 1.0.2
 
 推送版本标签时触发（如 `v1.0.2`）：
 
-- 🏗️ 跨平台编译
-- 📦 创建 GitHub Release
-- 📝 生成更新日志和安装说明
-- 🔐 计算 SHA256 校验和
-- 🍺 提供 Homebrew Formula 更新信息
+- 🧪 **运行 CI 测试** - 确保代码质量
+- 🏗️ **跨平台编译** - 6 个平台二进制文件
+- 📦 **创建 GitHub Release** - 自动发布
+- 🔐 **计算 SHA256 校验和** - 安全验证
+- 🍺 **自动更新 Homebrew Tap** - 无需手动操作
 
-### 手动更新 Homebrew Tap
+### 配置 Homebrew 自动化
 
-发布新版本后，需要手动更新 Homebrew Tap 仓库（未来将自动化）：
+首次使用需要配置 GitHub Token，仅需配置一次：
 
-```bash
-# 1. 进入 homebrew-tap 仓库
-cd ../homebrew-tap
+1. 🔑 **创建 Personal Access Token**
+   - 访问 https://github.com/settings/tokens/new
+   - 选择 `repo` 权限或 Fine-grained token
 
-# 2. 从 GitHub Release 评论中复制新的 Formula 代码
-# 3. 编辑 Formula/sql-diff.rb，更新 url 和 sha256
+2. 🔧 **添加到 Repository Secrets**
+   - 访问 https://github.com/Bacchusgift/sql-diff/settings/secrets/actions
+   - 名称：`HOMEBREW_TAP_TOKEN`
+   - 值：粘贴你的 token
 
-# 4. 提交并推送
-git add Formula/sql-diff.rb
-git commit -m "chore: update sql-diff to v1.0.2"
-git push origin main
-```
+📚 **详细配置指南**: [HOMEBREW_AUTOMATION.md](./HOMEBREW_AUTOMATION.md)
 
-详细说明请参考 [HOMEBREW.md](./HOMEBREW.md)
+配置完成后，只需推送 tag，剩下的一切都会自动完成！
 
 ## 📝 License
 
