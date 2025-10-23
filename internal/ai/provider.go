@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/youzi/sql-diff/internal/config"
+	"github.com/Bacchusgift/sql-diff/internal/config"
 )
 
 // Provider AI 提供商接口

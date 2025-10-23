@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/youzi/sql-diff/internal/parser"
+	"github.com/Bacchusgift/sql-diff/internal/parser"
 )
 
 // Differ 表结构差异比对器

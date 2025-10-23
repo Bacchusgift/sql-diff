@@ -5,12 +5,12 @@ import (
 	"os"
 	"strings"
 
+	"github.com/Bacchusgift/sql-diff/internal/ai"
+	"github.com/Bacchusgift/sql-diff/internal/config"
+	"github.com/Bacchusgift/sql-diff/internal/differ"
+	"github.com/Bacchusgift/sql-diff/internal/parser"
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
-	"github.com/youzi/sql-diff/internal/ai"
-	"github.com/youzi/sql-diff/internal/config"
-	"github.com/youzi/sql-diff/internal/differ"
-	"github.com/youzi/sql-diff/internal/parser"
 )
 
 var (

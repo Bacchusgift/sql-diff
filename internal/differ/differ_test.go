@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/youzi/sql-diff/internal/parser"
+	"github.com/Bacchusgift/sql-diff/internal/parser"
 )
 
 func TestDiffAddColumns(t *testing.T) {
