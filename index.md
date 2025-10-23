@@ -86,24 +86,54 @@ ALTER TABLE users ADD INDEX idx_email (email);
 
 ::: code-group
 
-```bash [交互式模式（推荐）]
+```bash [🍺 安装 (macOS)]
+# 一条命令安装
+brew install Bacchusgift/tap/sql-diff
+
+# 验证安装
+sql-diff --version
+
+# 更新到最新版本
+brew upgrade sql-diff
+```
+
+```bash [🐧 安装 (Linux)]
+# 下载预编译二进制文件
+wget https://github.com/Bacchusgift/sql-diff/releases/latest/download/sql-diff-linux-amd64
+
+# 赋予执行权限
+chmod +x sql-diff-linux-amd64
+
+# 移动到 PATH 目录
+sudo mv sql-diff-linux-amd64 /usr/local/bin/sql-diff
+
+# 验证
+sql-diff --version
+```
+
+```bash [🛠️ 从源码构建]
+# 克隆项目
+git clone https://github.com/Bacchusgift/sql-diff.git
+cd sql-diff
+
+# 编译
+make build
+
+# 运行
+./bin/sql-diff --version
+```
+
+```bash [🚀 交互式模式]
 # 启动交互式模式
 sql-diff -i
 
 # 按提示粘贴源表 SQL（支持多行）
-# 按 Ctrl+D（Mac/Linux）或 Ctrl+Z（Windows）结束输入
+# 输入 'END' 或连续两次 Enter 结束输入
 # 再粘贴目标表 SQL
 # 自动生成 DDL！
 ```
 
-```bash [安装]
-# 从源码构建
-git clone https://github.com/Bacchusgift/sql-diff.git
-cd sql-diff
-make build
-```
-
-```bash [配置 AI]
+```bash [🤖 配置 AI]
 # 一键配置 AI 功能（可选）
 sql-diff config \
   --ai-enabled \
@@ -112,16 +142,19 @@ sql-diff config \
   >> ~/.bashrc
 
 source ~/.bashrc
+
+# 启用 AI 分析
+sql-diff -i --ai
 ```
 
-```bash [命令行模式]
+```bash [📝 命令行模式]
 # 简单 SQL 可用命令行参数
 sql-diff \
   -s "CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(100))" \
   -t "CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(100), email VARCHAR(255))"
 
-# 启用 AI 分析
-sql-diff -i --ai
+# 输出到文件
+sql-diff -i -o migration.sql
 ```
 
 :::

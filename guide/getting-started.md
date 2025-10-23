@@ -2,9 +2,58 @@
 
 欢迎使用 SQL-Diff！本指南将帮助您在 5 分钟内开始使用。
 
-## 安装
+## 📦 安装
 
-### 从源码构建
+### 🍺 macOS (Homebrew) - 推荐
+
+最简单、最快捷的安装方式：
+
+```bash
+# 一条命令安装
+brew install Bacchusgift/tap/sql-diff
+
+# 验证安装
+sql-diff --version
+```
+
+**更新到最新版本：**
+```bash
+brew upgrade sql-diff
+```
+
+### 🐧 Linux / Windows
+
+#### 方式 1: 下载预编译二进制文件（推荐）
+
+从 [GitHub Releases](https://github.com/Bacchusgift/sql-diff/releases/latest) 下载对应平台：
+
+**Linux:**
+```bash
+# AMD64
+wget https://github.com/Bacchusgift/sql-diff/releases/latest/download/sql-diff-linux-amd64
+chmod +x sql-diff-linux-amd64
+sudo mv sql-diff-linux-amd64 /usr/local/bin/sql-diff
+
+# ARM64
+wget https://github.com/Bacchusgift/sql-diff/releases/latest/download/sql-diff-linux-arm64
+chmod +x sql-diff-linux-arm64
+sudo mv sql-diff-linux-arm64 /usr/local/bin/sql-diff
+```
+
+**Windows:**
+1. 下载 [sql-diff-windows-amd64.exe](https://github.com/Bacchusgift/sql-diff/releases/latest/download/sql-diff-windows-amd64.exe)
+2. 重命名为 `sql-diff.exe`
+3. 添加到 PATH 环境变量
+
+#### 方式 2: 使用 Go Install
+
+如果已安装 Go 1.21+：
+
+```bash
+go install github.com/Bacchusgift/sql-diff/cmd/sql-diff@latest
+```
+
+#### 方式 3: 从源码构建
 
 ```bash
 # 克隆仓库
@@ -17,24 +66,21 @@ go mod download
 # 编译
 make build
 
+# 安装（可选）
+sudo mv bin/sql-diff /usr/local/bin/
+
 # 验证安装
-./bin/sql-diff --help
+sql-diff --version
 ```
 
-### 使用 Go Install
-
-```bash
-go install github.com/Bacchusgift/sql-diff@latest
-```
-
-## 第一次使用
+## 🚀 第一次使用
 
 ### 1. 交互式模式（推荐）
 
 对于多行 SQL 或从数据库工具复制的语句，使用交互式模式最方便：
 
 ```bash
-./bin/sql-diff -i
+sql-diff -i
 ```
 
 按照提示操作：
@@ -70,7 +116,7 @@ go install github.com/Bacchusgift/sql-diff@latest
 对于简单的单行 SQL，可以直接使用命令行参数：
 
 ```bash
-./bin/sql-diff \
+sql-diff \
   -s "CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(100))" \
   -t "CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(100), email VARCHAR(255))"
 ```
@@ -109,13 +155,13 @@ ALTER TABLE users ADD COLUMN email VARCHAR(255);
 交互式模式也支持输出到文件：
 
 ```bash
-./bin/sql-diff -i -o migration.sql
+sql-diff -i -o migration.sql
 ```
 
 或命令行模式：
 
 ```bash
-./bin/sql-diff \
+sql-diff \
   -s "CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(100))" \
   -t "CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(100), email VARCHAR(255))" \
   -o migration.sql
@@ -143,13 +189,13 @@ cp .sql-diff-config.example.yaml .sql-diff-config.yaml
 交互式模式 + AI：
 
 ```bash
-./bin/sql-diff -i --ai
+sql-diff -i --ai
 ```
 
 或命令行模式：
 
 ```bash
-./bin/sql-diff \
+sql-diff \
   -s "CREATE TABLE users (id INT)" \
   -t "CREATE TABLE users (id INT, email VARCHAR(255))" \
   --ai
