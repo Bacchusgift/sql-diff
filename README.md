@@ -68,6 +68,27 @@ go build -o sql-diff cmd/sql-diff/main.go
 
 ## 🚀 快速开始
 
+### 交互式模式（推荐）
+
+对于包含多行的复杂 SQL 语句，推荐使用交互式模式：
+
+```bash
+# 启动交互式模式
+sql-diff -i
+
+# 交互式模式 + AI 分析
+sql-diff -i --ai
+
+# 交互式模式 + 输出到文件
+sql-diff -i -o output.sql
+```
+
+操作流程：
+1. 运行命令后，程序提示粘贴源表 SQL
+2. 直接粘贴（支持多行），粘贴完成后按 **Ctrl+D**（macOS/Linux）或 **Ctrl+Z 然后 Enter**（Windows）
+3. 接着粘贴目标表 SQL，再次按 **Ctrl+D**
+4. 程序自动比对并显示结果
+
 ### 基础用法
 
 比对两个表结构并生成 DDL 语句：
@@ -129,6 +150,7 @@ sql-diff -s "CREATE TABLE users (...)" -t "CREATE TABLE users (...)" --ai
 
 ### 命令行参数
 
+- `-i, --interactive`: 交互式模式（推荐，支持多行粘贴）
 - `-s, --source`: 源表的 CREATE TABLE 语句
 - `-t, --target`: 目标表的 CREATE TABLE 语句
 - `--ai`: 启用 AI 智能分析（需要配置）

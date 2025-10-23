@@ -1,6 +1,69 @@
 # 命令行工具
 
-SQL-Diff 提供了强大的命令行界面,支持多种使用场景。
+SQL-Diff 提供了强大的命令行界面，支持交互式模式和命令行参数两种使用方式。
+
+## 使用模式
+
+### 交互式模式（推荐）
+
+适用于：
+- ✅ 多行 SQL 语句
+- ✅ 从数据库工具（Navicat、MySQL Workbench 等）复制的 SQL
+- ✅ 包含换行、注释的复杂 SQL
+- ✅ 不想处理 shell 转义字符
+
+```bash
+# 基础使用
+sql-diff -i
+
+# 交互式 + AI 分析
+sql-diff -i --ai
+
+# 交互式 + 输出到文件
+sql-diff -i -o migration.sql
+```
+
+**操作流程：**
+1. 运行命令，程序提示粘贴源表 SQL
+2. 直接粘贴（支持多行），完成后按 **Ctrl+D**（macOS/Linux）或 **Ctrl+Z + Enter**（Windows）
+3. 程序提示粘贴目标表 SQL
+4. 再次粘贴并按 **Ctrl+D**
+5. 自动比对并显示结果
+
+**示例：**
+```bash
+$ sql-diff -i
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       SQL 表结构比对工具 - 交互式模式
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📋 请粘贴源表的 CREATE TABLE 语句：
+（粘贴完成后按 Ctrl+D 结束输入，macOS/Linux）
+
+CREATE TABLE `users` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `name` varchar(100) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+[按 Ctrl+D]
+
+✓ 已读取 156 个字符
+
+📋 请粘贴目标表的 CREATE TABLE 语句：
+[粘贴并按 Ctrl+D]
+...
+```
+
+### 命令行参数模式
+
+适用于：
+- ✅ 简单的单行 SQL
+- ✅ 脚本自动化
+- ✅ CI/CD 集成
+
+```bash
+sql-diff -s "CREATE TABLE users (id INT);" -t "CREATE TABLE users (id INT, name VARCHAR(100));"
+```
 
 ## 基本命令
 
@@ -30,6 +93,7 @@ sql-diff -s @source.sql -t @target.sql
 
 | 选项 | 简写 | 说明 | 示例 |
 |------|------|------|------|
+| `--interactive` | `-i` | 交互式模式（支持多行粘贴） | `-i` |
 | `--source` | `-s` | 源表 SQL 语句 | `-s "CREATE TABLE..."` |
 | `--target` | `-t` | 目标表 SQL 语句 | `-t "CREATE TABLE..."` |
 | `--ai` | | 启用 AI 分析 | `--ai` |
