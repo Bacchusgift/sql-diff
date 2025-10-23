@@ -3,14 +3,15 @@ name: Release
 on:
   push:
     tags:
-      - 'v*'
+      - 'v*'      # 当推送 v1.0.2 这样的 tag 时触发
+      - '[0-9]+.*' # 也支持 1.0.2 这样的 tag
 
 permissions:
   contents: write
 
 jobs:
   release:
-    name: Create Release
+    name: Build and Release
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -22,45 +23,129 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: '1.21'
+          cache: true
 
-      - name: Get version
+      - name: Get version from tag
         id: get_version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/}
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "📦 准备发布版本: $VERSION"
 
       - name: Build all platforms
         run: make release
         env:
           VERSION: ${{ steps.get_version.outputs.VERSION }}
 
-      - name: Create Release
+      - name: Display build artifacts
+        run: |
+          echo "📦 构建产物列表:"
+          ls -lh dist/
+          echo ""
+          echo "📝 校验和:"
+          cat dist/checksums.txt
+
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
           draft: false
           generate_release_notes: true
           files: |
-            dist/*
+            dist/sql-diff-linux-amd64
+            dist/sql-diff-linux-arm64
+            dist/sql-diff-darwin-amd64
+            dist/sql-diff-darwin-arm64
+            dist/sql-diff-windows-amd64.exe
+            dist/sql-diff-windows-arm64.exe
+            dist/checksums.txt
+          body: |
+            ## 📦 安装方式
+
+            ### macOS (Homebrew)
+            ```bash
+            brew install Bacchusgift/tap/sql-diff
+            ```
+
+            ### 手动安装
+            从下方 Assets 下载对应平台的二进制文件：
+            - **Linux AMD64**: `sql-diff-linux-amd64`
+            - **Linux ARM64**: `sql-diff-linux-arm64`
+            - **macOS Intel**: `sql-diff-darwin-amd64`
+            - **macOS Apple Silicon**: `sql-diff-darwin-arm64`
+            - **Windows AMD64**: `sql-diff-windows-amd64.exe`
+            - **Windows ARM64**: `sql-diff-windows-arm64.exe`
+
+            下载后赋予执行权限（macOS/Linux）：
+            ```bash
+            chmod +x sql-diff-*
+            sudo mv sql-diff-* /usr/local/bin/sql-diff
+            ```
+
+            ### 验证安装
+            ```bash
+            sql-diff --version
+            ```
+
+            ---
+
+            ## 📚 文档
+            完整文档请访问：https://bacchusgift.github.io/sql-diff/
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Calculate SHA256 for Homebrew
         id: sha256
         run: |
-          TARBALL_URL="https://github.com/${{ github.repository }}/archive/refs/tags/${{ steps.get_version.outputs.VERSION }}.tar.gz"
-          echo "Downloading $TARBALL_URL"
+          VERSION=${{ steps.get_version.outputs.VERSION }}
+          TARBALL_URL="https://github.com/${{ github.repository }}/archive/refs/tags/${VERSION}.tar.gz"
+          
+          echo "⏳ 等待 GitHub 生成 tarball..."
+          sleep 10
+          
+          echo "📥 下载: $TARBALL_URL"
           SHA256=$(curl -sL "$TARBALL_URL" | shasum -a 256 | awk '{print $1}')
-          echo "SHA256: $SHA256"
+          
+          echo "✅ SHA256: $SHA256"
           echo "sha256=$SHA256" >> $GITHUB_OUTPUT
-          echo "version=${{ steps.get_version.outputs.VERSION }}" >> $GITHUB_OUTPUT
 
-      - name: Create Homebrew Formula comment
+      - name: Update Homebrew Formula (Auto)
+        run: |
+          VERSION=${{ steps.get_version.outputs.VERSION }}
+          SHA256=${{ steps.sha256.outputs.sha256 }}
+          
+          echo "📝 Homebrew Formula 更新信息："
+          echo "   Version: $VERSION"
+          echo "   SHA256: $SHA256"
+          echo "   URL: https://github.com/${{ github.repository }}/archive/refs/tags/${VERSION}.tar.gz"
+          echo ""
+          echo "📋 请手动更新 homebrew-tap 仓库，或等待后续自动化实现"
+
+      - name: Post Homebrew update instructions
         uses: actions/github-script@v7
         with:
           script: |
             const version = '${{ steps.get_version.outputs.VERSION }}';
             const sha256 = '${{ steps.sha256.outputs.sha256 }}';
-            const body = `## 📦 Homebrew Formula 信息
+            
+            // 查找刚创建的 release
+            const releases = await github.rest.repos.listReleases({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 1
+            });
+            
+            if (releases.data.length === 0) {
+              console.log('No release found');
+              return;
+            }
+            
+            const releaseId = releases.data[0].id;
+            
+            const body = `## 🍺 Homebrew Formula 更新信息
 
-            请更新 Homebrew Tap 仓库中的 formula：
+            > 💡 **提示**: 如果您有 homebrew-tap 仓库，请更新 Formula 文件
+
+            ### 更新内容
 
             \`\`\`ruby
             class SqlDiff < Formula
@@ -70,41 +155,74 @@ jobs:
               sha256 "${sha256}"
               license "MIT"
               
-              # ... 其余内容保持不变
+              depends_on "go" => :build
+
+              def install
+                ldflags = %W[
+                  -s -w
+                  -X main.Version=#{version}
+                  -X main.BuildTime=#{time.iso8601}
+                  -X main.GitCommit=#{Utils.git_short_head}
+                ]
+
+                system "go", "build", *std_go_args(ldflags: ldflags), "./cmd/sql-diff"
+                generate_completions_from_executable(bin/"sql-diff", "completion")
+              end
+
+              test do
+                assert_match version.to_s, shell_output("#{bin}/sql-diff --version")
+              end
             end
             \`\`\`
 
-            ### 更新步骤：
-
-            1. 克隆 homebrew-tap 仓库
-            2. 更新 \`Formula/sql-diff.rb\` 中的 \`url\` 和 \`sha256\`
-            3. 提交并推送
+            ### 快速更新命令
 
             \`\`\`bash
+            # 1. 克隆或进入 homebrew-tap 仓库
+            git clone https://github.com/Bacchusgift/homebrew-tap.git
             cd homebrew-tap
-            # 编辑 Formula/sql-diff.rb
+
+            # 2. 编辑 Formula/sql-diff.rb
+            # 更新 url 和 sha256 字段
+
+            # 3. 提交并推送
             git add Formula/sql-diff.rb
-            git commit -m "Update sql-diff to ${version}"
+            git commit -m "chore: update sql-diff to ${version}"
             git push origin main
+            \`\`\`
+
+            ### 验证更新
+
+            \`\`\`bash
+            brew update
+            brew upgrade sql-diff
+            sql-diff --version  # 应该显示 ${version}
             \`\`\`
             `;
 
-            github.rest.issues.createComment({
-              issue_number: context.payload.release.id,
+            await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
+              issue_number: releaseId,
               body: body
             });
 
-  # 可选：自动更新 Homebrew Tap
+  # 🚀 未来计划：自动更新 Homebrew Tap
   # update-homebrew:
-  #   name: Update Homebrew Tap
+  #   name: Auto Update Homebrew Tap
   #   needs: release
   #   runs-on: ubuntu-latest
+  #   if: github.repository == 'Bacchusgift/sql-diff'
   #   steps:
-  #     - name: Update Homebrew formula
-  #       uses: dawidd6/action-homebrew-bump-formula@v3
+  #     - name: Trigger Homebrew Tap Update
+  #       uses: peter-evans/repository-dispatch@v2
   #       with:
   #         token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
-  #         formula: sql-diff
-  #         tap: Bacchusgift/homebrew-tap
+  #         repository: Bacchusgift/homebrew-tap
+  #         event-type: update-formula
+  #         client-payload: |
+  #           {
+  #             "formula": "sql-diff",
+  #             "version": "${{ steps.get_version.outputs.VERSION }}",
+  #             "sha256": "${{ steps.sha256.outputs.sha256 }}"
+  #           }

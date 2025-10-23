@@ -1,0 +1,91 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+
+permissions:
+  contents: read
+
+jobs:
+  # 代码质量检查和测试
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+          cache: true
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Verify dependencies
+        run: go mod verify
+
+      - name: Run go vet
+        run: go vet ./...
+
+      - name: Run go fmt
+        run: |
+          if [ -n "$(gofmt -s -l .)" ]; then
+            echo "Go code is not formatted:"
+            gofmt -s -d .
+            exit 1
+          fi
+
+      - name: Run tests
+        run: make test
+
+  # 编译验证 - 多平台
+  build:
+    name: Build - ${{ matrix.os }}-${{ matrix.arch }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [linux, darwin, windows]
+        arch: [amd64, arm64]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+          cache: true
+
+      - name: Build ${{ matrix.os }}-${{ matrix.arch }}
+        run: |
+          if [ "${{ matrix.os }}" = "windows" ]; then
+            GOOS=${{ matrix.os }} GOARCH=${{ matrix.arch }} go build -o sql-diff-${{ matrix.os }}-${{ matrix.arch }}.exe ./cmd/sql-diff
+          else
+            GOOS=${{ matrix.os }} GOARCH=${{ matrix.arch }} go build -o sql-diff-${{ matrix.os }}-${{ matrix.arch }} ./cmd/sql-diff
+          fi
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sql-diff-${{ matrix.os }}-${{ matrix.arch }}
+          path: sql-diff-*
+          retention-days: 7
+
+  # 汇总结果
+  check-success:
+    name: All Checks Passed
+    needs: [test, build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Success
+        run: echo "✅ 所有检查通过！代码可以合并。"
