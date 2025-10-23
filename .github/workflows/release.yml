@@ -10,9 +10,48 @@ permissions:
   contents: write
 
 jobs:
+  # 第一步：运行 CI 测试
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+          cache: true
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Verify dependencies
+        run: go mod verify
+
+      - name: Run go vet
+        run: go vet ./...
+
+      - name: Run go fmt
+        run: |
+          if [ -n "$(gofmt -s -l .)" ]; then
+            echo "Go code is not formatted:"
+            gofmt -s -d .
+            exit 1
+          fi
+
+      - name: Run tests
+        run: make test
+
+  # 第二步：构建并发布
   release:
     name: Build and Release
+    needs: test  # 必须等待测试通过
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.get_version.outputs.VERSION }}
+      sha256: ${{ steps.sha256.outputs.sha256 }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -207,22 +246,76 @@ jobs:
               body: body
             });
 
-  # 🚀 未来计划：自动更新 Homebrew Tap
-  # update-homebrew:
-  #   name: Auto Update Homebrew Tap
-  #   needs: release
-  #   runs-on: ubuntu-latest
-  #   if: github.repository == 'Bacchusgift/sql-diff'
-  #   steps:
-  #     - name: Trigger Homebrew Tap Update
-  #       uses: peter-evans/repository-dispatch@v2
-  #       with:
-  #         token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
-  #         repository: Bacchusgift/homebrew-tap
-  #         event-type: update-formula
-  #         client-payload: |
-  #           {
-  #             "formula": "sql-diff",
-  #             "version": "${{ steps.get_version.outputs.VERSION }}",
-  #             "sha256": "${{ steps.sha256.outputs.sha256 }}"
-  #           }
+  # 🚀 第三步：自动更新 Homebrew Tap
+  update-homebrew:
+    name: Update Homebrew Formula
+    needs: release
+    runs-on: ubuntu-latest
+    if: github.repository == 'Bacchusgift/sql-diff'
+    steps:
+      - name: Checkout homebrew-tap repository
+        uses: actions/checkout@v4
+        with:
+          repository: Bacchusgift/homebrew-tap
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN || secrets.GITHUB_TOKEN }}
+          path: homebrew-tap
+
+      - name: Update Formula
+        run: |
+          cd homebrew-tap
+          VERSION="${{ needs.release.outputs.version }}"
+          SHA256="${{ needs.release.outputs.sha256 }}"
+          
+          cat > Formula/sql-diff.rb << 'EOF'
+          class SqlDiff < Formula
+            desc "智能 SQL 表结构比对工具，支持交互式多行输入和 AI 分析"
+            homepage "https://bacchusgift.github.io/sql-diff/"
+            url "https://github.com/Bacchusgift/sql-diff/archive/refs/tags/${VERSION}.tar.gz"
+            sha256 "${SHA256}"
+            license "MIT"
+            head "https://github.com/Bacchusgift/sql-diff.git", branch: "main"
+
+            depends_on "go" => :build
+
+            def install
+              ldflags = %W[
+                -s -w
+                -X main.Version=#{version}
+                -X main.BuildTime=#{time.iso8601}
+                -X main.GitCommit=#{Utils.git_short_head}
+              ]
+
+              system "go", "build", *std_go_args(ldflags: ldflags), "./cmd/sql-diff"
+              generate_completions_from_executable(bin/"sql-diff", "completion")
+            end
+
+            test do
+              assert_match version.to_s, shell_output("#{bin}/sql-diff --version")
+              
+              source_sql = "CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(100));"
+              target_sql = "CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(100), email VARCHAR(255));"
+              
+              output = shell_output("#{bin}/sql-diff -s '#{source_sql}' -t '#{target_sql}'")
+              assert_match "ADD COLUMN email", output
+            end
+          end
+          EOF
+          
+          # 替换变量
+          sed -i "s/\${VERSION}/$VERSION/g" Formula/sql-diff.rb
+          sed -i "s/\${SHA256}/$SHA256/g" Formula/sql-diff.rb
+          
+          echo "✅ Formula 已更新:"
+          cat Formula/sql-diff.rb
+
+      - name: Commit and push
+        run: |
+          cd homebrew-tap
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          git add Formula/sql-diff.rb
+          git commit -m "chore: update sql-diff to ${{ needs.release.outputs.version }}"
+          git push origin main
+          
+          echo "🎉 Homebrew Formula 已自动更新！"
