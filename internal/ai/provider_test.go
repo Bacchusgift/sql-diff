@@ -1,5 +1,4 @@
 package ai
-package ai
 
 import (
 	"testing"
