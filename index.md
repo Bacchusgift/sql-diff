@@ -201,7 +201,7 @@ AI 提出的索引优化建议直接提升查询性能
 - 📖 [完整文档](/guide/introduction)
 - 💬 [问题反馈](https://github.com/Bacchusgift/sql-diff/issues)
 - 🌟 [Star on GitHub](https://github.com/Bacchusgift/sql-diff)
-- 🤝 [贡献代码](/contributing)
+- 🤝 [贡献代码](https://github.com/Bacchusgift/sql-diff/blob/main/CONTRIBUTING.md)
 
 </div>
 

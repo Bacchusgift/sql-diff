@@ -490,10 +490,9 @@ require (
 
 ## 贡献指南
 
-详见 [CONTRIBUTING.md](/contributing)
+欢迎贡献代码、文档或提出建议。详细信息请查看项目的贡献指南文档。
 
 ## 下一步
 
 - [快速开始](/guide/getting-started) - 开始使用 SQL-Diff
-- [开发指南](/contributing) - 参与项目开发
-- [API 文档](/api/reference) - API 参考文档
+- [开发指南](https://github.com/Bacchusgift/sql-diff/blob/main/CONTRIBUTING.md) - 参与项目开发
