@@ -29,9 +29,45 @@ go install github.com/Bacchusgift/sql-diff@latest
 
 ## 第一次使用
 
-### 1. 基础比对
+### 1. 交互式模式（推荐）
 
-比对两个简单的表结构：
+对于多行 SQL 或从数据库工具复制的语句，使用交互式模式最方便：
+
+```bash
+./bin/sql-diff -i
+```
+
+按照提示操作：
+1. 粘贴源表的 CREATE TABLE 语句（可以是多行）
+2. 按 **Ctrl+D**（macOS/Linux）或 **Ctrl+Z 然后 Enter**（Windows）结束输入
+3. 粘贴目标表的 CREATE TABLE 语句
+4. 再次按 **Ctrl+D** 完成
+
+示例输出：
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       SQL 表结构比对工具 - 交互式模式
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📋 请粘贴源表的 CREATE TABLE 语句：
+（粘贴完成后按 Ctrl+D 结束输入，macOS/Linux）
+
+[粘贴你的 SQL...]
+✓ 已读取 245 个字符
+
+📋 请粘贴目标表的 CREATE TABLE 语句：
+[粘贴你的 SQL...]
+✓ 已读取 312 个字符
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       开始比对
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+...
+```
+
+### 2. 命令行参数模式
+
+对于简单的单行 SQL，可以直接使用命令行参数：
 
 ```bash
 ./bin/sql-diff \
@@ -68,9 +104,15 @@ go install github.com/Bacchusgift/sql-diff@latest
 ALTER TABLE users ADD COLUMN email VARCHAR(255);
 ```
 
-### 2. 输出到文件
+### 3. 输出到文件
 
-将生成的 DDL 保存到文件：
+交互式模式也支持输出到文件：
+
+```bash
+./bin/sql-diff -i -o migration.sql
+```
+
+或命令行模式：
 
 ```bash
 ./bin/sql-diff \
@@ -79,7 +121,7 @@ ALTER TABLE users ADD COLUMN email VARCHAR(255);
   -o migration.sql
 ```
 
-### 3. 配置 AI 功能（可选）
+### 4. 配置 AI 功能（可选）
 
 ```bash
 # 方法 1: 使用环境变量（推荐）
@@ -96,7 +138,15 @@ cp .sql-diff-config.example.yaml .sql-diff-config.yaml
 # 编辑文件填入 API Key
 ```
 
-### 4. 使用 AI 分析
+### 5. 使用 AI 分析
+
+交互式模式 + AI：
+
+```bash
+./bin/sql-diff -i --ai
+```
+
+或命令行模式：
 
 ```bash
 ./bin/sql-diff \
