@@ -70,11 +70,26 @@ ALTER TABLE users ADD INDEX idx_email (email);
 
 ## 📦 安装
 
+### macOS (Homebrew)
+
+```bash
+# 添加 tap
+brew tap Bacchusgift/tap
+
+# 安装
+brew install sql-diff
+
+# 或者一条命令
+brew install Bacchusgift/tap/sql-diff
+```
+
+### Go Install
+
 ```bash
 go install github.com/Bacchusgift/sql-diff@latest
 ```
 
-或从源码构建：
+### 从源码构建
 
 ```bash
 git clone https://github.com/Bacchusgift/sql-diff.git
