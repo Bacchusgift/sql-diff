@@ -212,16 +212,116 @@ ai:
 
 ## 🔧 开发
 
+### 本地开发
+
 ```bash
+# 克隆项目
+git clone https://github.com/Bacchusgift/sql-diff.git
+cd sql-diff
+
 # 安装依赖
 go mod download
 
 # 运行测试
-go test ./...
+make test
 
-# 构建
-go build -o bin/sql-diff cmd/sql-diff/main.go
+# 本地构建
+make build
+
+# 运行
+./bin/sql-diff -i
 ```
+
+### 可用的 Make 命令
+
+```bash
+make help          # 显示所有可用命令
+make build         # 编译当前平台
+make test          # 运行测试
+make build-all     # 跨平台编译（所有平台）
+make release       # 打包发布版本
+make clean         # 清理构建产物
+```
+
+### 发布新版本
+
+本项目使用 GitHub Actions 自动化发布流程，只需推送版本标签即可：
+
+```bash
+# 1. 确保代码已提交
+git add .
+git commit -m "feat: 新功能描述"
+git push origin main
+
+# 2. 创建并推送版本标签（推荐使用 v 前缀）
+git tag v1.0.2
+git push origin v1.0.2
+
+# 或者不带 v 前缀也支持
+git tag 1.0.2
+git push origin 1.0.2
+```
+
+**自动化流程会完成：**
+
+1. ✅ **跨平台编译** - 自动编译 6 个平台的二进制文件：
+   - Linux (AMD64, ARM64)
+   - macOS (Intel, Apple Silicon)
+   - Windows (AMD64, ARM64)
+
+2. ✅ **创建 GitHub Release** - 自动创建发布页面并上传：
+   - 所有平台的二进制文件
+   - SHA256 校验和文件
+   - 自动生成的更新日志
+
+3. ✅ **生成 Homebrew 更新信息** - 在 Release 评论中提供：
+   - 更新后的 Formula 代码
+   - SHA256 校验和
+   - 详细的更新步骤
+
+4. 🚧 **Homebrew Tap 更新** - 目前需要手动更新（后续将自动化）
+
+### CI/CD 工作流
+
+项目配置了两个主要的 GitHub Actions 工作流：
+
+#### 1. CI 工作流 (`.github/workflows/ci.yml`)
+
+每次推送到 `main` 或 `develop` 分支，或创建 PR 时触发：
+
+- ✅ 代码格式检查 (`go fmt`)
+- ✅ 代码质量检查 (`go vet`)
+- ✅ 运行所有单元测试
+- ✅ 6 平台编译验证
+
+#### 2. Release 工作流 (`.github/workflows/release.yml`)
+
+推送版本标签时触发（如 `v1.0.2`）：
+
+- 🏗️ 跨平台编译
+- 📦 创建 GitHub Release
+- 📝 生成更新日志和安装说明
+- 🔐 计算 SHA256 校验和
+- 🍺 提供 Homebrew Formula 更新信息
+
+### 手动更新 Homebrew Tap
+
+发布新版本后，需要手动更新 Homebrew Tap 仓库（未来将自动化）：
+
+```bash
+# 1. 进入 homebrew-tap 仓库
+cd ../homebrew-tap
+
+# 2. 从 GitHub Release 评论中复制新的 Formula 代码
+# 3. 编辑 Formula/sql-diff.rb，更新 url 和 sha256
+
+# 4. 提交并推送
+git add Formula/sql-diff.rb
+git commit -m "chore: update sql-diff to v1.0.2"
+git push origin main
+```
+
+详细说明请参考 [HOMEBREW.md](./HOMEBREW.md)
 
 ## 📝 License
 
