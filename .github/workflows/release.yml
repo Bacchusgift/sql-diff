@@ -1,0 +1,110 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+
+      - name: Get version
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Build all platforms
+        run: make release
+        env:
+          VERSION: ${{ steps.get_version.outputs.VERSION }}
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          draft: false
+          generate_release_notes: true
+          files: |
+            dist/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Calculate SHA256 for Homebrew
+        id: sha256
+        run: |
+          TARBALL_URL="https://github.com/${{ github.repository }}/archive/refs/tags/${{ steps.get_version.outputs.VERSION }}.tar.gz"
+          echo "Downloading $TARBALL_URL"
+          SHA256=$(curl -sL "$TARBALL_URL" | shasum -a 256 | awk '{print $1}')
+          echo "SHA256: $SHA256"
+          echo "sha256=$SHA256" >> $GITHUB_OUTPUT
+          echo "version=${{ steps.get_version.outputs.VERSION }}" >> $GITHUB_OUTPUT
+
+      - name: Create Homebrew Formula comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const version = '${{ steps.get_version.outputs.VERSION }}';
+            const sha256 = '${{ steps.sha256.outputs.sha256 }}';
+            const body = `## 📦 Homebrew Formula 信息
+
+            请更新 Homebrew Tap 仓库中的 formula：
+
+            \`\`\`ruby
+            class SqlDiff < Formula
+              desc "智能 SQL 表结构比对工具，支持交互式多行输入和 AI 分析"
+              homepage "https://bacchusgift.github.io/sql-diff/"
+              url "https://github.com/${{ github.repository }}/archive/refs/tags/${version}.tar.gz"
+              sha256 "${sha256}"
+              license "MIT"
+              
+              # ... 其余内容保持不变
+            end
+            \`\`\`
+
+            ### 更新步骤：
+
+            1. 克隆 homebrew-tap 仓库
+            2. 更新 \`Formula/sql-diff.rb\` 中的 \`url\` 和 \`sha256\`
+            3. 提交并推送
+
+            \`\`\`bash
+            cd homebrew-tap
+            # 编辑 Formula/sql-diff.rb
+            git add Formula/sql-diff.rb
+            git commit -m "Update sql-diff to ${version}"
+            git push origin main
+            \`\`\`
+            `;
+
+            github.rest.issues.createComment({
+              issue_number: context.payload.release.id,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
+
+  # 可选：自动更新 Homebrew Tap
+  # update-homebrew:
+  #   name: Update Homebrew Tap
+  #   needs: release
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Update Homebrew formula
+  #       uses: dawidd6/action-homebrew-bump-formula@v3
+  #       with:
+  #         token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+  #         formula: sql-diff
+  #         tap: Bacchusgift/homebrew-tap
