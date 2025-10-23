@@ -143,7 +143,7 @@ sql-diff -s "CREATE TABLE users (...)" -t "CREATE TABLE users (...)" --ai
 ai:
   enabled: true
   provider: deepseek  # 支持 deepseek, openai 等
-  api_key: sk-b505bf3438174743a56ddf80945a89c6
+  api_key: sk-** (替换成你的）
   api_endpoint: https://api.deepseek.com/v1
   model: deepseek-chat
 ```
