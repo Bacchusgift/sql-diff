@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"bufio"
 	"fmt"
 	"io"
 	"os"
@@ -394,18 +393,13 @@ func runInteractive() error {
 
 // readMultilineInput 从标准输入读取多行文本
 func readMultilineInput() (string, error) {
-	scanner := bufio.NewScanner(os.Stdin)
-	var lines []string
-
-	for scanner.Scan() {
-		lines = append(lines, scanner.Text())
-	}
-
-	if err := scanner.Err(); err != nil && err != io.EOF {
+	// 直接读取所有输入直到 EOF (Ctrl+D/Ctrl+Z)
+	data, err := io.ReadAll(os.Stdin)
+	if err != nil {
 		return "", err
 	}
 
-	return strings.Join(lines, "\n"), nil
+	return string(data), nil
 }
 
 // processComparison 执行 SQL 比对逻辑
