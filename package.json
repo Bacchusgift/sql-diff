@@ -1,0 +1,23 @@
+{
+  "name": "sql-diff",
+  "version": "1.0.0",
+  "description": "<p align=\"center\">   <img src=\"https://img.shields.io/badge/Go-1.21+-00ADD8?style=for-the-badge&logo=go\" alt=\"Go Version\">   <img src=\"https://img.shields.io/badge/License-MIT-green?style=for-the-badge\" alt=\"License\">   <img src=\"https://img.shields.io/badge/Status-Active-success?style=for-the-badge\" alt=\"Status\"> </p>",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "example": "examples"
+  },
+  "scripts": {
+    "docs:dev": "vitepress dev",
+    "docs:build": "vitepress build",
+    "docs:preview": "vitepress preview"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "devDependencies": {
+    "vitepress": "^1.6.4",
+    "vue": "^3.5.22"
+  }
+}

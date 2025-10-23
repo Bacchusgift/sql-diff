@@ -1,0 +1,707 @@
+# CI/CD 集成
+
+SQL-Diff 可以轻松集成到 CI/CD 流程中,实现自动化的数据库 schema 变更检测和审查。
+
+## GitHub Actions
+
+### 基础集成
+
+在 PR 中自动检测 schema 变更:
+
+```yaml
+# .github/workflows/schema-check.yml
+name: Schema Change Check
+
+on:
+  pull_request:
+    paths:
+      - 'db/schema/**'
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 2
+      
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+      
+      - name: Install SQL-Diff
+        run: go install github.com/Bacchusgift/sql-diff/cmd/sql-diff@latest
+      
+      - name: Check Schema Changes
+        run: |
+          # 获取变更的 SQL 文件
+          CHANGED_FILES=$(git diff --name-only HEAD^ HEAD | grep '\.sql$' || true)
+          
+          if [ -z "$CHANGED_FILES" ]; then
+            echo "No SQL files changed"
+            exit 0
+          fi
+          
+          # 分析每个变更的表
+          for file in $CHANGED_FILES; do
+            echo "=== Checking $file ==="
+            
+            # 获取旧版本
+            git show HEAD^:$file > old.sql 2>/dev/null || echo "" > old.sql
+            
+            # 运行 SQL-Diff
+            sql-diff -s old.sql -t $file --ai
+          done
+        env:
+          SQL_DIFF_AI_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+```
+
+### 高级集成 - 自动注释 PR
+
+在 PR 中自动添加分析结果:
+
+```yaml
+# .github/workflows/schema-review.yml
+name: Automated Schema Review
+
+on:
+  pull_request:
+    paths:
+      - 'database/migrations/**'
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+      
+      - name: Install SQL-Diff
+        run: go install github.com/Bacchusgift/sql-diff/cmd/sql-diff@latest
+      
+      - name: Analyze Changes
+        id: analyze
+        run: |
+          mkdir -p /tmp/reports
+          
+          # 获取基准分支
+          git fetch origin ${{ github.base_ref }}
+          
+          # 查找变更的 SQL 文件
+          CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -E '\.(sql)$' || true)
+          
+          if [ -z "$CHANGED_FILES" ]; then
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          echo "has_changes=true" >> $GITHUB_OUTPUT
+          
+          # 分析每个文件
+          RISK_COUNT=0
+          
+          for file in $CHANGED_FILES; do
+            table_name=$(basename $file .sql)
+            echo "Analyzing $table_name..."
+            
+            # 获取旧版本(如果存在)
+            git show origin/${{ github.base_ref }}:$file > /tmp/old_${table_name}.sql 2>/dev/null || echo "" > /tmp/old_${table_name}.sql
+            
+            # 运行分析
+            sql-diff \
+              -s /tmp/old_${table_name}.sql \
+              -t $file \
+              --ai \
+              --format json > /tmp/reports/${table_name}.json
+            
+            # 统计风险
+            RISKS=$(jq '.ai_analysis.risks | length' /tmp/reports/${table_name}.json 2>/dev/null || echo "0")
+            RISK_COUNT=$((RISK_COUNT + RISKS))
+          done
+          
+          echo "risk_count=$RISK_COUNT" >> $GITHUB_OUTPUT
+        env:
+          SQL_DIFF_AI_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+      
+      - name: Generate Report
+        if: steps.analyze.outputs.has_changes == 'true'
+        run: |
+          cat > /tmp/pr_comment.md << 'HEADER'
+          ## 🔍 Schema Change Analysis
+          
+          This PR contains database schema changes. Here's the automated analysis:
+          
+          HEADER
+          
+          for report in /tmp/reports/*.json; do
+            table=$(basename $report .json)
+            
+            cat >> /tmp/pr_comment.md << EOF
+          
+          ### 📊 Table: \`$table\`
+          
+          #### Generated DDL
+          \`\`\`sql
+          $(jq -r '.ddl_statements[]' $report)
+          \`\`\`
+          
+          #### 🤖 AI Analysis
+          
+          **Summary:**
+          $(jq -r '.ai_analysis.summary' $report)
+          
+          **Suggestions:**
+          $(jq -r '.ai_analysis.suggestions[]' $report | sed 's/^/- /')
+          
+          **Risks:**
+          $(jq -r '.ai_analysis.risks[]' $report | sed 's/^/⚠️  /')
+          
+          ---
+          EOF
+          done
+          
+          cat >> /tmp/pr_comment.md << 'FOOTER'
+          
+          **Total Risks Detected:** ${{ steps.analyze.outputs.risk_count }}
+          
+          > 🤖 This analysis was automatically generated by SQL-Diff with AI assistance.
+          FOOTER
+      
+      - name: Comment on PR
+        if: steps.analyze.outputs.has_changes == 'true'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            const comment = fs.readFileSync('/tmp/pr_comment.md', 'utf8');
+            
+            // 查找已存在的评论
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            
+            const botComment = comments.find(comment => 
+              comment.user.type === 'Bot' && 
+              comment.body.includes('Schema Change Analysis')
+            );
+            
+            if (botComment) {
+              // 更新已存在的评论
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: comment
+              });
+            } else {
+              // 创建新评论
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: comment
+              });
+            }
+      
+      - name: Check Risk Threshold
+        if: steps.analyze.outputs.has_changes == 'true'
+        run: |
+          RISK_COUNT=${{ steps.analyze.outputs.risk_count }}
+          RISK_THRESHOLD=5
+          
+          if [ $RISK_COUNT -gt $RISK_THRESHOLD ]; then
+            echo "❌ Risk count ($RISK_COUNT) exceeds threshold ($RISK_THRESHOLD)"
+            echo "Please review the schema changes carefully and get DBA approval"
+            exit 1
+          else
+            echo "✅ Risk count ($RISK_COUNT) within acceptable threshold"
+          fi
+```
+
+### 部署到 Staging
+
+合并到主分支后自动部署:
+
+```yaml
+# .github/workflows/deploy-staging.yml
+name: Deploy to Staging
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'database/migrations/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: staging
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup MySQL Client
+        run: sudo apt-get install -y mysql-client
+      
+      - name: Export Current Schema
+        run: |
+          mysqldump \
+            --no-data \
+            -h ${{ secrets.STAGING_DB_HOST }} \
+            -u ${{ secrets.STAGING_DB_USER }} \
+            -p${{ secrets.STAGING_DB_PASSWORD }} \
+            ${{ secrets.STAGING_DB_NAME }} \
+            > /tmp/current_schema.sql
+      
+      - name: Generate Migration
+        run: |
+          sql-diff \
+            -s /tmp/current_schema.sql \
+            -t database/schema/latest.sql \
+            --output /tmp/migration.sql
+      
+      - name: Backup Database
+        run: |
+          mysqldump \
+            -h ${{ secrets.STAGING_DB_HOST }} \
+            -u ${{ secrets.STAGING_DB_USER }} \
+            -p${{ secrets.STAGING_DB_PASSWORD }} \
+            ${{ secrets.STAGING_DB_NAME }} \
+            > /tmp/backup_$(date +%Y%m%d_%H%M%S).sql
+      
+      - name: Apply Migration
+        run: |
+          mysql \
+            -h ${{ secrets.STAGING_DB_HOST }} \
+            -u ${{ secrets.STAGING_DB_USER }} \
+            -p${{ secrets.STAGING_DB_PASSWORD }} \
+            ${{ secrets.STAGING_DB_NAME }} \
+            < /tmp/migration.sql
+      
+      - name: Verify Schema
+        run: |
+          echo "Migration applied successfully!"
+          mysql \
+            -h ${{ secrets.STAGING_DB_HOST }} \
+            -u ${{ secrets.STAGING_DB_USER }} \
+            -p${{ secrets.STAGING_DB_PASSWORD }} \
+            -e "SHOW TABLES;" \
+            ${{ secrets.STAGING_DB_NAME }}
+```
+
+## GitLab CI
+
+### 基础配置
+
+```yaml
+# .gitlab-ci.yml
+stages:
+  - validate
+  - review
+  - deploy
+
+variables:
+  GOPATH: $CI_PROJECT_DIR/.go
+
+before_script:
+  - mkdir -p .go
+  - export PATH=$PATH:$GOPATH/bin
+
+schema-validate:
+  stage: validate
+  image: golang:1.21
+  only:
+    changes:
+      - database/schema/**
+  script:
+    - go install github.com/Bacchusgift/sql-diff/cmd/sql-diff@latest
+    - |
+      for file in database/schema/*.sql; do
+        echo "Validating $file"
+        # 这里可以添加 SQL 语法验证
+      done
+  cache:
+    paths:
+      - .go/pkg/mod/
+
+schema-review:
+  stage: review
+  image: golang:1.21
+  only:
+    changes:
+      - database/schema/**
+  script:
+    - go install github.com/Bacchusgift/sql-diff/cmd/sql-diff@latest
+    - mkdir -p reports
+    - |
+      for file in database/schema/*.sql; do
+        table=$(basename $file .sql)
+        
+        # 获取上一个版本
+        git show HEAD~1:$file > old_${table}.sql 2>/dev/null || echo "" > old_${table}.sql
+        
+        # 运行分析
+        sql-diff \
+          -s old_${table}.sql \
+          -t $file \
+          --ai > reports/${table}_analysis.txt
+      done
+    - cat reports/*.txt
+  artifacts:
+    paths:
+      - reports/
+    expire_in: 1 week
+  variables:
+    SQL_DIFF_AI_API_KEY: $DEEPSEEK_API_KEY
+
+deploy-staging:
+  stage: deploy
+  image: mysql:8.0
+  environment:
+    name: staging
+  only:
+    - main
+  when: manual
+  script:
+    - |
+      # 导出当前 schema
+      mysqldump --no-data \
+        -h $STAGING_DB_HOST \
+        -u $STAGING_DB_USER \
+        -p$STAGING_DB_PASSWORD \
+        $STAGING_DB_NAME > current.sql
+      
+      # 生成迁移
+      sql-diff \
+        -s current.sql \
+        -t database/schema/all.sql \
+        > migration.sql
+      
+      # 备份
+      mysqldump \
+        -h $STAGING_DB_HOST \
+        -u $STAGING_DB_USER \
+        -p$STAGING_DB_PASSWORD \
+        $STAGING_DB_NAME > backup_$(date +%Y%m%d_%H%M%S).sql
+      
+      # 应用迁移
+      mysql \
+        -h $STAGING_DB_HOST \
+        -u $STAGING_DB_USER \
+        -p$STAGING_DB_PASSWORD \
+        $STAGING_DB_NAME < migration.sql
+```
+
+## Jenkins Pipeline
+
+### Declarative Pipeline
+
+```groovy
+// Jenkinsfile
+pipeline {
+    agent any
+    
+    environment {
+        GOPATH = "${WORKSPACE}/.go"
+        PATH = "${PATH}:${GOPATH}/bin"
+        SQL_DIFF_AI_API_KEY = credentials('deepseek-api-key')
+    }
+    
+    stages {
+        stage('Setup') {
+            steps {
+                sh '''
+                    mkdir -p ${GOPATH}
+                    go install github.com/Bacchusgift/sql-diff/cmd/sql-diff@latest
+                '''
+            }
+        }
+        
+        stage('Schema Analysis') {
+            when {
+                changeset "database/schema/**"
+            }
+            steps {
+                script {
+                    def changedFiles = sh(
+                        script: "git diff --name-only HEAD~1 HEAD | grep -E '\\.sql\$' || true",
+                        returnStdout: true
+                    ).trim().split('\n')
+                    
+                    if (changedFiles) {
+                        for (file in changedFiles) {
+                            def tableName = file.tokenize('/').last().replaceAll('\\.sql$', '')
+                            
+                            sh """
+                                echo "Analyzing ${tableName}..."
+                                
+                                git show HEAD~1:${file} > old_${tableName}.sql || echo "" > old_${tableName}.sql
+                                
+                                sql-diff \
+                                    -s old_${tableName}.sql \
+                                    -t ${file} \
+                                    --ai \
+                                    --format json > ${tableName}_analysis.json
+                            """
+                            
+                            def analysis = readJSON file: "${tableName}_analysis.json"
+                            def riskCount = analysis.ai_analysis?.risks?.size() ?: 0
+                            
+                            echo "Table: ${tableName}, Risks: ${riskCount}"
+                            
+                            if (riskCount > 5) {
+                                error("Too many risks detected in ${tableName}")
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        stage('Deploy to Staging') {
+            when {
+                branch 'main'
+            }
+            steps {
+                input message: 'Deploy to staging?', ok: 'Deploy'
+                
+                sh '''
+                    # 导出当前 schema
+                    mysqldump --no-data \
+                        -h ${STAGING_DB_HOST} \
+                        -u ${STAGING_DB_USER} \
+                        -p${STAGING_DB_PASSWORD} \
+                        ${STAGING_DB_NAME} > current.sql
+                    
+                    # 生成迁移
+                    sql-diff \
+                        -s current.sql \
+                        -t database/schema/all.sql \
+                        > migration.sql
+                    
+                    # 应用迁移
+                    mysql \
+                        -h ${STAGING_DB_HOST} \
+                        -u ${STAGING_DB_USER} \
+                        -p${STAGING_DB_PASSWORD} \
+                        ${STAGING_DB_NAME} < migration.sql
+                '''
+            }
+        }
+    }
+    
+    post {
+        always {
+            archiveArtifacts artifacts: '*_analysis.json, migration.sql', allowEmptyArchive: true
+        }
+        failure {
+            mail to: 'team@example.com',
+                 subject: "Schema Migration Failed: ${env.JOB_NAME} - ${env.BUILD_NUMBER}",
+                 body: "Check console output at ${env.BUILD_URL}"
+        }
+    }
+}
+```
+
+## Docker 集成
+
+### Dockerfile
+
+```dockerfile
+# Dockerfile.sql-diff
+FROM golang:1.21-alpine AS builder
+
+WORKDIR /build
+
+RUN apk add --no-cache git
+
+RUN go install github.com/Bacchusgift/sql-diff/cmd/sql-diff@latest
+
+FROM alpine:latest
+
+RUN apk add --no-cache ca-certificates mysql-client
+
+COPY --from=builder /go/bin/sql-diff /usr/local/bin/sql-diff
+
+WORKDIR /workspace
+
+ENTRYPOINT ["sql-diff"]
+```
+
+### Docker Compose
+
+```yaml
+# docker-compose.yml
+version: '3.8'
+
+services:
+  sql-diff:
+    build:
+      context: .
+      dockerfile: Dockerfile.sql-diff
+    volumes:
+      - ./database:/workspace
+    environment:
+      - SQL_DIFF_AI_ENABLED=true
+      - SQL_DIFF_AI_API_KEY=${DEEPSEEK_API_KEY}
+    command: |
+      -s /workspace/old_schema.sql
+      -t /workspace/new_schema.sql
+      --ai
+```
+
+### 在 CI 中使用 Docker
+
+```yaml
+# .github/workflows/docker-schema-check.yml
+name: Schema Check with Docker
+
+on:
+  pull_request:
+    paths:
+      - 'database/**'
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Build SQL-Diff Image
+        run: docker build -t sql-diff:latest -f Dockerfile.sql-diff .
+      
+      - name: Run Schema Analysis
+        run: |
+          docker run --rm \
+            -v $(pwd)/database:/workspace \
+            -e SQL_DIFF_AI_API_KEY=${{ secrets.DEEPSEEK_API_KEY }} \
+            sql-diff:latest \
+            -s /workspace/old/schema.sql \
+            -t /workspace/new/schema.sql \
+            --ai
+```
+
+## 最佳实践
+
+### 1. 分支保护规则
+
+在 GitHub 中设置分支保护:
+
+- 要求 Schema Check 通过才能合并
+- 要求至少一名 DBA 审查
+- 风险超过阈值时阻止合并
+
+### 2. 自动化审查清单
+
+```yaml
+# 在 PR 模板中添加清单
+## Database Schema Changes
+
+- [ ] Schema changes reviewed by DBA
+- [ ] AI analysis risks addressed
+- [ ] Migration tested in staging
+- [ ] Rollback plan prepared
+- [ ] Performance impact assessed
+- [ ] Data backup verified
+```
+
+### 3. 多环境部署
+
+```bash
+# deploy.sh
+#!/bin/bash
+
+ENV=$1  # dev, staging, prod
+
+case $ENV in
+  dev)
+    AUTO_DEPLOY=true
+    REQUIRE_APPROVAL=false
+    ;;
+  staging)
+    AUTO_DEPLOY=true
+    REQUIRE_APPROVAL=true
+    ;;
+  prod)
+    AUTO_DEPLOY=false
+    REQUIRE_APPROVAL=true
+    ;;
+esac
+
+# 生成迁移
+sql-diff -s current_${ENV}.sql -t target.sql > migration_${ENV}.sql
+
+# AI 分析
+sql-diff -s current_${ENV}.sql -t target.sql --ai > analysis_${ENV}.txt
+
+# 审查
+if [ "$REQUIRE_APPROVAL" = true ]; then
+  echo "Review required. Check analysis_${ENV}.txt"
+  read -p "Approve deployment? (yes/no): " approval
+  
+  if [ "$approval" != "yes" ]; then
+    echo "Deployment cancelled"
+    exit 1
+  fi
+fi
+
+# 部署
+if [ "$AUTO_DEPLOY" = true ]; then
+  mysql -h ${ENV}_db < migration_${ENV}.sql
+  echo "Deployed to $ENV"
+fi
+```
+
+## 监控和告警
+
+### 集成 Slack 通知
+
+```yaml
+# 在 GitHub Actions 中添加 Slack 通知
+- name: Notify Slack
+  if: failure()
+  uses: slackapi/slack-github-action@v1
+  with:
+    payload: |
+      {
+        "text": "⚠️  Schema migration failed in ${{ github.repository }}",
+        "blocks": [
+          {
+            "type": "section",
+            "text": {
+              "type": "mrkdwn",
+              "text": "*Schema Migration Alert*\n\nFailed in PR #${{ github.event.pull_request.number }}"
+            }
+          },
+          {
+            "type": "section",
+            "text": {
+              "type": "mrkdwn",
+              "text": "Risks detected: ${{ steps.analyze.outputs.risk_count }}"
+            }
+          }
+        ]
+      }
+  env:
+    SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+```
+
+## 下一步
+
+- [基础示例](/examples/basic) - 学习基础用法
+- [高级示例](/examples/advanced) - 复杂场景示例
+- [AI 最佳实践](/ai/best-practices) - 优化 AI 使用
