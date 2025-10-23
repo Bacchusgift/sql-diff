@@ -1,0 +1,21 @@
+# SQL-Diff 配置文件示例
+# 复制此文件为 .sql-diff-config.yaml 并填入你的配置
+
+ai:
+  # 是否启用 AI 功能
+  enabled: false
+  
+  # AI 提供商：deepseek, openai, custom
+  provider: deepseek
+  
+  # API 密钥
+  api_key: sk-b505bf3438174743a56ddf80945a89c6
+  
+  # API 端点
+  api_endpoint: https://api.deepseek.com/v1
+  
+  # 使用的模型
+  model: deepseek-chat
+  
+  # 请求超时时间（秒）
+  timeout: 30
