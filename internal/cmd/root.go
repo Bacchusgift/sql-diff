@@ -386,44 +386,26 @@ func runInteractive() error {
 	}
 	fmt.Println()
 
-	// 读取源表 SQL
-	color.New(color.FgYellow, color.Bold).Println("📋 请粘贴源表的 CREATE TABLE 语句：")
-	color.New(color.FgWhite).Println("（直接粘贴完整 SQL，粘贴完成后输入 'END' 或连续按两次 Enter）")
-	color.New(color.FgCyan).Println("（提示：建议在文本编辑器中准备好 SQL，然后直接粘贴）")
-	fmt.Println()
-
-	sourceSQL, err := readMultilineInput()
+	// 显示功能菜单
+	mode, err := showModeMenu(cfg.AI.Enabled)
 	if err != nil {
-		return fmt.Errorf("读取源表 SQL 失败: %v", err)
+		return err
 	}
 
-	if strings.TrimSpace(sourceSQL) == "" {
-		return fmt.Errorf("源表 SQL 不能为空")
+	// 根据选择的模式执行不同的功能
+	switch mode {
+	case 1:
+		// SQL 表结构比对模式
+		return runCompareMode(cfg)
+	case 2:
+		// AI 生成 CREATE TABLE 模式
+		return runGenerateTableMode(cfg)
+	case 3:
+		// AI 生成 ALTER TABLE 模式
+		return runGenerateAlterMode(cfg)
+	default:
+		return fmt.Errorf("无效的模式选择")
 	}
-
-	successColor.Printf("✓ 已读取 %d 个字符\n", len(sourceSQL))
-	fmt.Println()
-
-	// 读取目标表 SQL
-	color.New(color.FgYellow, color.Bold).Println("📋 请粘贴目标表的 CREATE TABLE 语句：")
-	color.New(color.FgWhite).Println("（直接粘贴完整 SQL，粘贴完成后输入 'END' 或连续按两次 Enter）")
-	color.New(color.FgCyan).Println("（提示：建议在文本编辑器中准备好 SQL，然后直接粘贴）")
-	fmt.Println()
-
-	targetSQL, err := readMultilineInput()
-	if err != nil {
-		return fmt.Errorf("读取目标表 SQL 失败: %v", err)
-	}
-
-	if strings.TrimSpace(targetSQL) == "" {
-		return fmt.Errorf("目标表 SQL 不能为空")
-	}
-
-	successColor.Printf("✓ 已读取 %d 个字符\n", len(targetSQL))
-	fmt.Println()
-
-	// 调用核心比对逻辑
-	return processComparison(sourceSQL, targetSQL, cfg)
 }
 
 // readMultilineInput 从标准输入读取多行文本
