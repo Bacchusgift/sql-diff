@@ -42,6 +42,7 @@ node_modules/
 .vitepress/dist
 
 # Internal development docs (should not be public)
+.internal_docs/
 .AI_SQL/
 .AI_SQL_ENHANCED/
 .AI_MIGRATION/
