@@ -16,6 +16,11 @@ import (
 )
 
 var (
+	// 版本信息
+	version   = "dev"
+	buildTime = "unknown"
+	gitCommit = "unknown"
+
 	// 命令行参数
 	sourceSQL   string
 	targetSQL   string
@@ -30,6 +35,20 @@ var (
 	infoColor    = color.New(color.FgCyan)
 	warnColor    = color.New(color.FgYellow)
 )
+
+// SetVersion 设置版本信息（由 main 包调用）
+func SetVersion(v, bt, gc string) {
+	if v != "" {
+		version = v
+		rootCmd.Version = v // 更新 rootCmd 的版本
+	}
+	if bt != "" {
+		buildTime = bt
+	}
+	if gc != "" {
+		gitCommit = gc
+	}
+}
 
 // rootCmd 根命令
 var rootCmd = &cobra.Command{
@@ -53,7 +72,8 @@ var rootCmd = &cobra.Command{
   
   # 输出到文件
   sql-diff -i -o output.sql`,
-	RunE: run,
+	Version: version, // 设置版本号，支持 --version 和 -v
+	RunE:    run,
 }
 
 // Execute 执行命令
@@ -65,12 +85,19 @@ func Execute() {
 }
 
 func init() {
+	// 自定义版本输出模板（简洁版）
+	rootCmd.SetVersionTemplate(`{{.Version}}
+`)
+	
 	rootCmd.Flags().StringVarP(&sourceSQL, "source", "s", "", "源表的 CREATE TABLE 语句")
 	rootCmd.Flags().StringVarP(&targetSQL, "target", "t", "", "目标表的 CREATE TABLE 语句")
 	rootCmd.Flags().BoolVarP(&interactive, "interactive", "i", false, "交互式模式（支持多行粘贴）")
 	rootCmd.Flags().BoolVar(&enableAI, "ai", false, "启用 AI 智能分析")
 	rootCmd.Flags().StringVar(&configPath, "config", ".sql-diff-config.yaml", "配置文件路径")
 	rootCmd.Flags().StringVarP(&outputFile, "output", "o", "", "输出文件路径（默认输出到控制台）")
+	
+	// 添加 version 命令（详细版）
+	rootCmd.AddCommand(versionCmd)
 }
 
 // run 执行主逻辑
