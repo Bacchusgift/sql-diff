@@ -18,6 +18,7 @@ var (
 	aiModel    string
 	aiTimeout  int
 	showEnv    bool
+	quietMode  bool  // 静默模式，只输出 export 命令
 )
 
 // configCmd 配置管理命令
@@ -57,6 +58,7 @@ func init() {
 	configCmd.Flags().StringVar(&aiModel, "model", "", "使用的模型")
 	configCmd.Flags().IntVar(&aiTimeout, "timeout", 0, "超时时间（秒）")
 	configCmd.Flags().BoolVar(&showEnv, "show", false, "显示当前环境变量配置")
+	configCmd.Flags().BoolVarP(&quietMode, "quiet", "q", false, "静默模式，只输出 export 命令")
 }
 
 func runConfig(cmd *cobra.Command, args []string) error {
@@ -108,6 +110,15 @@ func runConfig(cmd *cobra.Command, args []string) error {
 	// 生成 export 命令
 	exports := cfg.SaveToEnv()
 
+	// 静默模式：只输出 export 命令，方便重定向
+	if quietMode {
+		for _, exp := range exports {
+			fmt.Println(exp)
+		}
+		return nil
+	}
+
+	// 正常模式：显示完整的提示信息
 	fmt.Println()
 	infoColor.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 	infoColor.Println("       配置环境变量")
@@ -124,16 +135,17 @@ func runConfig(cmd *cobra.Command, args []string) error {
 	fmt.Println()
 	warnColor.Println("💡 使用方法:")
 	fmt.Println()
-	fmt.Println("  方法 1 - 临时使用（当前会话）:")
-	fmt.Println("    eval \"$(sql-diff config --ai-enabled --provider deepseek --api-key YOUR_KEY)\"")
-	fmt.Println()
-	fmt.Println("  方法 2 - 永久保存（推荐）:")
-	fmt.Println("    sql-diff config --ai-enabled --provider deepseek --api-key YOUR_KEY >> ~/.bashrc")
+	fmt.Println("  方法 1 - 自动保存到 ~/.bashrc (推荐):")
+	fmt.Println("    sql-diff config --ai-enabled --provider deepseek --api-key YOUR_KEY -q >> ~/.bashrc")
 	fmt.Println("    source ~/.bashrc")
 	fmt.Println()
-	fmt.Println("  方法 3 - 保存到文件:")
-	fmt.Println("    sql-diff config --ai-enabled --provider deepseek --api-key YOUR_KEY > ~/.sql-diff-env")
-	fmt.Println("    source ~/.sql-diff-env")
+	fmt.Println("  方法 2 - 保存到独立文件:")
+	fmt.Println("    sql-diff config --ai-enabled --provider deepseek --api-key YOUR_KEY -q > ~/.sql-diff-env")
+	fmt.Println("    echo 'source ~/.sql-diff-env' >> ~/.bashrc")
+	fmt.Println("    source ~/.bashrc")
+	fmt.Println()
+	fmt.Println("  方法 3 - 临时使用(当前会话):")
+	fmt.Println("    eval \"$(sql-diff config --ai-enabled --provider deepseek --api-key YOUR_KEY -q)\"")
 	fmt.Println()
 	fmt.Println("  验证配置:")
 	fmt.Println("    sql-diff config --show")
