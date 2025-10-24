@@ -8,8 +8,10 @@ import (
 
 // MockProvider 模拟的 AI 提供商（用于测试）
 type MockProvider struct {
-	AnalyzeFunc     func(sourceDDL, targetDDL, diff string) (*AnalysisResult, error)
-	OptimizeSQLFunc func(sql string) (*OptimizationResult, error)
+	AnalyzeFunc            func(sourceDDL, targetDDL, diff string) (*AnalysisResult, error)
+	OptimizeSQLFunc        func(sql string) (*OptimizationResult, error)
+	GenerateCreateTableFunc func(description string) (string, error)
+	GenerateAlterTableFunc  func(currentDDL, description string) (string, error)
 }
 
 // NewMockProvider 创建模拟提供商
@@ -45,6 +47,12 @@ func NewMockProvider() *MockProvider {
 				},
 			}, nil
 		},
+		GenerateCreateTableFunc: func(description string) (string, error) {
+			return fmt.Sprintf("CREATE TABLE mock_table (\n  id INT AUTO_INCREMENT PRIMARY KEY,\n  name VARCHAR(100) NOT NULL COMMENT '%s'\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4", description), nil
+		},
+		GenerateAlterTableFunc: func(currentDDL, description string) (string, error) {
+			return fmt.Sprintf("ALTER TABLE mock_table ADD COLUMN new_field VARCHAR(50) COMMENT '%s'", description), nil
+		},
 	}
 }
 
@@ -62,6 +70,22 @@ func (m *MockProvider) OptimizeSQL(sql string) (*OptimizationResult, error) {
 		return m.OptimizeSQLFunc(sql)
 	}
 	return nil, fmt.Errorf("OptimizeSQL not implemented")
+}
+
+// GenerateCreateTable 生成 CREATE TABLE 语句
+func (m *MockProvider) GenerateCreateTable(description string) (string, error) {
+	if m.GenerateCreateTableFunc != nil {
+		return m.GenerateCreateTableFunc(description)
+	}
+	return "", fmt.Errorf("GenerateCreateTable not implemented")
+}
+
+// GenerateAlterTable 生成 ALTER TABLE 语句
+func (m *MockProvider) GenerateAlterTable(currentDDL, description string) (string, error) {
+	if m.GenerateAlterTableFunc != nil {
+		return m.GenerateAlterTableFunc(currentDDL, description)
+	}
+	return "", fmt.Errorf("GenerateAlterTable not implemented")
 }
 
 // NewMockProviderWithConfig 从配置创建 Mock 提供商

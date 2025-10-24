@@ -19,6 +19,12 @@ type Provider interface {
 
 	// OptimizeSQL 优化 SQL 语句
 	OptimizeSQL(sql string) (*OptimizationResult, error)
+
+	// GenerateCreateTable 根据自然语言描述生成 CREATE TABLE 语句
+	GenerateCreateTable(description string) (string, error)
+
+	// GenerateAlterTable 根据自然语言描述和现有表结构生成 ALTER TABLE 语句
+	GenerateAlterTable(currentDDL, description string) (string, error)
 }
 
 // AnalysisResult AI 分析结果
@@ -66,6 +72,14 @@ func (p *NoOpProvider) OptimizeSQL(sql string) (*OptimizationResult, error) {
 		OriginalSQL:  sql,
 		OptimizedSQL: sql,
 	}, nil
+}
+
+func (p *NoOpProvider) GenerateCreateTable(description string) (string, error) {
+	return "", fmt.Errorf("AI 功能未启用，无法生成 CREATE TABLE 语句")
+}
+
+func (p *NoOpProvider) GenerateAlterTable(currentDDL, description string) (string, error) {
+	return "", fmt.Errorf("AI 功能未启用，无法生成 ALTER TABLE 语句")
 }
 
 // DeepSeekProvider DeepSeek AI 提供商
@@ -166,6 +180,63 @@ func (p *DeepSeekProvider) OptimizeSQL(sql string) (*OptimizationResult, error) 
 		OptimizedSQL: response,
 		Improvements: []string{"请查看 AI 优化建议"},
 	}, nil
+}
+
+// GenerateCreateTable 根据自然语言描述生成 CREATE TABLE 语句
+func (p *DeepSeekProvider) GenerateCreateTable(description string) (string, error) {
+	prompt := fmt.Sprintf(`你是一个专业的数据库设计专家。请根据以下自然语言描述，生成一个标准的 MySQL CREATE TABLE 语句。
+
+需求描述：
+%s
+
+要求：
+1. 生成完整的、可直接执行的 MySQL CREATE TABLE 语句
+2. 字段类型要合理（如 VARCHAR 指定长度、金额用 DECIMAL 等）
+3. 主键、索引、默认值、注释等都要完善
+4. 遵循 MySQL 最佳实践（如使用 InnoDB、UTF8MB4 编码等）
+5. 只返回 SQL 语句，不要有其他解释文字
+6. 表名和字段名使用蛇形命名法（snake_case）
+
+请直接返回完整的 CREATE TABLE 语句：`, description)
+
+	response, err := p.chat(prompt)
+	if err != nil {
+		return "", err
+	}
+
+	// 清理响应，提取 SQL 语句
+	sql := cleanSQLResponse(response)
+	return sql, nil
+}
+
+// GenerateAlterTable 根据自然语言描述和现有表结构生成 ALTER TABLE 语句
+func (p *DeepSeekProvider) GenerateAlterTable(currentDDL, description string) (string, error) {
+	prompt := fmt.Sprintf(`你是一个专业的数据库设计专家。请根据以下现有表结构和修改需求，生成相应的 MySQL ALTER TABLE 语句。
+
+【现有表结构】
+%s
+
+【修改需求】
+%s
+
+要求：
+1. 生成完整的、可直接执行的 MySQL ALTER TABLE 语句
+2. 如果有多个修改，可以生成多条 ALTER TABLE 语句，每条一行
+3. 考虑数据迁移的安全性（如修改字段类型要兼容现有数据）
+4. 遵循 MySQL 最佳实践
+5. 只返回 SQL 语句，不要有其他解释文字
+6. 每条语句后不需要加分号，工具会自动添加
+
+请直接返回 ALTER TABLE 语句：`, currentDDL, description)
+
+	response, err := p.chat(prompt)
+	if err != nil {
+		return "", err
+	}
+
+	// 清理响应，提取 SQL 语句
+	sql := cleanSQLResponse(response)
+	return sql, nil
 }
 
 // chat 调用 DeepSeek Chat API
@@ -301,4 +372,49 @@ func parseAnalysisResponse(response string) *AnalysisResult {
 	}
 
 	return result
+}
+
+// cleanSQLResponse 清理 AI 响应，提取 SQL 语句
+func cleanSQLResponse(response string) string {
+	// 移除 Markdown 代码块标记
+	response = strings.ReplaceAll(response, "```sql", "")
+	response = strings.ReplaceAll(response, "```mysql", "")
+	response = strings.ReplaceAll(response, "```", "")
+	
+	// 移除首尾空白
+	response = strings.TrimSpace(response)
+	
+	// 如果响应中包含多行，尝试提取 CREATE TABLE 或 ALTER TABLE 部分
+	lines := strings.Split(response, "\n")
+	var sqlLines []string
+	inSQL := false
+	
+	for _, line := range lines {
+		trimmedLine := strings.TrimSpace(line)
+		upperLine := strings.ToUpper(trimmedLine)
+		
+		// 检测 SQL 语句开始
+		if strings.HasPrefix(upperLine, "CREATE TABLE") || 
+		   strings.HasPrefix(upperLine, "ALTER TABLE") {
+			inSQL = true
+		}
+		
+		if inSQL {
+			sqlLines = append(sqlLines, line)
+			
+			// 检测 SQL 语句结束（遇到分号）
+			if strings.HasSuffix(trimmedLine, ";") {
+				break
+			}
+		}
+	}
+	
+	if len(sqlLines) > 0 {
+		response = strings.Join(sqlLines, "\n")
+	}
+	
+	// 移除末尾的分号（工具会统一添加）
+	response = strings.TrimSuffix(strings.TrimSpace(response), ";")
+	
+	return response
 }
