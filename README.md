@@ -28,6 +28,14 @@
 - ✅ 无需处理换行符和转义字符
 - ✅ 实时字符统计和友好提示
 
+### 🪄 AI 自然语言生成 SQL（新）
+使用 AI 根据自然语言描述生成 SQL 语句：
+- ✅ **CREATE TABLE 生成**：描述需求即可生成完整表结构
+- ✅ **ALTER TABLE 生成**：基于现有表结构生成变更语句
+- ✅ **智能类型推断**：自动选择合适的字段类型和长度
+- ✅ **最佳实践**：自动应用索引、编码等优化配置
+- 📖 [详细文档](./AI_SQL_GENERATOR.md)
+
 ### 🔍 精准比对
 基于 AST 语法树解析，准确识别：
 - ✅ 新增列
@@ -235,6 +243,38 @@ sql-diff -s "CREATE TABLE users (...)" -t "CREATE TABLE users (...)" --ai
 ```
 
 ## 📖 使用说明
+
+### AI 生成 SQL（新功能）
+
+#### 生成 CREATE TABLE
+
+根据自然语言描述生成表结构：
+
+```bash
+# 生成用户表
+sql-diff generate -d "创建用户表，包含 ID、用户名、邮箱、密码、创建时间"
+
+# 生成并保存到文件
+sql-diff generate -d "创建商品表：商品ID、名称、价格、库存、分类、状态" -o product.sql
+```
+
+#### 生成 ALTER TABLE
+
+根据现有表结构和修改需求生成变更语句：
+
+```bash
+# 命令行模式
+sql-diff alter -t "CREATE TABLE users (...)" -d "添加手机号字段、邮箱改为唯一索引"
+
+# 交互式模式（推荐）
+sql-diff alter -i -d "添加商品状态字段，默认值为上架"
+```
+
+📖 **[查看完整文档](./AI_SQL_GENERATOR.md)** - 更多示例和使用场景
+
+---
+
+### 表结构比对
 
 ### 命令行参数
 
