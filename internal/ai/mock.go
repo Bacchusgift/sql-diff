@@ -8,8 +8,8 @@ import (
 
 // MockProvider 模拟的 AI 提供商（用于测试）
 type MockProvider struct {
-	AnalyzeFunc            func(sourceDDL, targetDDL, diff string) (*AnalysisResult, error)
-	OptimizeSQLFunc        func(sql string) (*OptimizationResult, error)
+	AnalyzeFunc             func(sourceDDL, targetDDL, diff string) (*AnalysisResult, error)
+	OptimizeSQLFunc         func(sql string) (*OptimizationResult, error)
 	GenerateCreateTableFunc func(description string) (string, error)
 	GenerateAlterTableFunc  func(currentDDL, description string) (string, error)
 }

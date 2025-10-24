@@ -28,16 +28,16 @@ func printVersion() {
 	titleColor.Println("       SQL-Diff 版本信息")
 	titleColor.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 	fmt.Println()
-	
+
 	labelColor.Print("版本号:     ")
 	valueColor.Println(version)
-	
+
 	labelColor.Print("构建时间:   ")
 	valueColor.Println(buildTime)
-	
+
 	labelColor.Print("Git提交:    ")
 	valueColor.Println(gitCommit)
-	
+
 	fmt.Println()
 	titleColor.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 }

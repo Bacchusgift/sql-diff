@@ -95,14 +95,14 @@ func init() {
 	// 自定义版本输出模板（简洁版）
 	rootCmd.SetVersionTemplate(`{{.Version}}
 `)
-	
+
 	rootCmd.Flags().StringVarP(&sourceSQL, "source", "s", "", "源表的 CREATE TABLE 语句")
 	rootCmd.Flags().StringVarP(&targetSQL, "target", "t", "", "目标表的 CREATE TABLE 语句")
 	rootCmd.Flags().BoolVarP(&interactive, "interactive", "i", false, "交互式模式（支持多行粘贴）")
 	rootCmd.Flags().BoolVar(&enableAI, "ai", false, "启用 AI 智能分析")
 	rootCmd.Flags().StringVar(&configPath, "config", ".sql-diff-config.yaml", "配置文件路径")
 	rootCmd.Flags().StringVarP(&outputFile, "output", "o", "", "输出文件路径（默认输出到控制台）")
-	
+
 	// 添加 version 命令（详细版）
 	rootCmd.AddCommand(versionCmd)
 }

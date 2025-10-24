@@ -21,20 +21,27 @@
 
 ## ✨ 特性
 
-### 🎯 交互式输入（新）
+### 🎯 光标选择交互（新）
+现代化的交互式界面，方向键移动光标选择功能：
+- ✅ 方向键移动光标，无需输入数字
+- ✅ 配合 ✅ 视觉反馈，直观清晰
+- ✅ 实时显示功能说明
+- ✅ 三种模式：SQL 比对、AI 生成 CREATE TABLE、AI 生成 ALTER TABLE
+- ✅ 无需记忆命令参数
+
+### 📋 多行 SQL 输入
 支持多行 SQL 直接粘贴，完美解决换行符问题：
 - ✅ 从 Navicat、MySQL Workbench 等工具直接复制
 - ✅ 支持包含注释的复杂 SQL
 - ✅ 无需处理换行符和转义字符
 - ✅ 实时字符统计和友好提示
 
-### 🪄 AI 自然语言生成 SQL（新）
+### 🪄 AI 自然语言生成 SQL
 使用 AI 根据自然语言描述生成 SQL 语句：
 - ✅ **CREATE TABLE 生成**：描述需求即可生成完整表结构
 - ✅ **ALTER TABLE 生成**：基于现有表结构生成变更语句
 - ✅ **智能类型推断**：自动选择合适的字段类型和长度
 - ✅ **最佳实践**：自动应用索引、编码等优化配置
-- 📖 [详细文档](./AI_SQL_GENERATOR.md)
 
 ### 🔍 精准比对
 基于 AST 语法树解析，准确识别：
@@ -155,9 +162,47 @@ sudo mv bin/sql-diff /usr/local/bin/
 
 ## 🚀 快速开始
 
-### 交互式模式（推荐）
+### 🎯 交互式光标选择（推荐）
 
-对于多行 SQL 或从数据库工具复制的语句，交互式模式是最佳选择：
+现代化的交互界面，方向键选择功能模式：
+
+```bash
+# 启动交互式模式
+sql-diff -i
+
+# 界面效果：
+# 📋 请选择功能模式
+# 👉 SQL 表结构比对
+#    AI 生成 CREATE TABLE [需要 AI]
+#    AI 生成 ALTER TABLE [需要 AI]
+#
+# --------- 功能说明 ---------
+# 描述: 比较两个表结构差异，自动生成 DDL 补全语句
+
+# 操作方式：
+# ⬆️⬇️ - 方向键移动光标选择功能
+# ⏎ Enter - 确认选择
+# 然后按提示粘贴 SQL 或输入描述
+```
+
+**三种功能模式：**
+
+1️⃣ **SQL 表结构比对** - 比较两个表结构，生成 DDL  
+2️⃣ **AI 生成 CREATE TABLE** - 自然语言描述生成建表语句（需启用 AI）  
+3️⃣ **AI 生成 ALTER TABLE** - 基于现有表生成变更语句（需启用 AI）
+
+**启用 AI 功能：**
+```bash
+# 方式 1：命令行参数
+sql-diff -i --ai
+
+# 方式 2：配置文件
+sql-diff config --ai-enabled --api-key YOUR_KEY
+```
+
+### 交互式多行输入
+
+适合从数据库工具复制的多行 SQL：
 
 ```bash
 # 启动交互式模式
@@ -244,18 +289,17 @@ sql-diff -s "CREATE TABLE users (...)" -t "CREATE TABLE users (...)" --ai
 
 ## 📖 使用说明
 
-### AI 生成 SQL（新功能）
+### AI 生成 SQL
 
 #### 生成 CREATE TABLE
 
 根据自然语言描述生成表结构：
 
 ```bash
-# 生成用户表
-sql-diff generate -d "创建用户表，包含 ID、用户名、邮箱、密码、创建时间"
+# 使用交互式模式选择 "AI 生成 CREATE TABLE"
+sql-diff -i --ai
 
-# 生成并保存到文件
-sql-diff generate -d "创建商品表：商品ID、名称、价格、库存、分类、状态" -o product.sql
+# 输入描述即可生成
 ```
 
 #### 生成 ALTER TABLE
@@ -263,14 +307,13 @@ sql-diff generate -d "创建商品表：商品ID、名称、价格、库存、�
 根据现有表结构和修改需求生成变更语句：
 
 ```bash
-# 命令行模式
-sql-diff alter -t "CREATE TABLE users (...)" -d "添加手机号字段、邮箱改为唯一索引"
+# 使用交互式模式选择 "AI 生成 ALTER TABLE"
+sql-diff -i --ai
 
-# 交互式模式（推荐）
-sql-diff alter -i -d "添加商品状态字段，默认值为上架"
+# 粘贴现有表结构，然后输入修改描述
 ```
 
-📖 **[查看完整文档](./AI_SQL_GENERATOR.md)** - 更多示例和使用场景
+📖 **[查看完整文档](https://bacchusgift.github.io/sql-diff/guide/interactive)** - 更多示例和使用场景
 
 ---
 
@@ -342,39 +385,18 @@ git commit -m "feat: 新功能描述"
 git push origin main
 
 # 2. 创建并推送版本标签（推荐使用 v 前缀）
-git tag v1.0.2
-git push origin v1.0.2
-
-# 或者不带 v 前缀也支持
-git tag 1.0.2
-git push origin 1.0.2
+git tag v1.0.3
+git push origin v1.0.3
 ```
 
 **自动化流程会完成：**
 
-1. ✅ **运行 CI 测试** - 确保代码质量：
-   - 代码格式检查 (`go fmt`)
-   - 代码质量检查 (`go vet`)
-   - 运行所有单元测试
-   - 多平台编译验证
+1. ✅ **运行 CI 测试** - 确保代码质量
+2. ✅ **跨平台编译** - 自动编译 6 个平台的二进制文件
+3. ✅ **创建 GitHub Release** - 自动创建发布页面并上传
+4. 🍺 **自动更新 Homebrew Tap** - 用户可立即更新
 
-2. ✅ **跨平台编译** - 自动编译 6 个平台的二进制文件：
-   - Linux (AMD64, ARM64)
-   - macOS (Intel, Apple Silicon)
-   - Windows (AMD64, ARM64)
-
-3. ✅ **创建 GitHub Release** - 自动创建发布页面并上传：
-   - 所有平台的二进制文件
-   - SHA256 校验和文件
-   - 自动生成的更新日志
-
-4. 🍺 **自动更新 Homebrew Tap** - 完全自动化：
-   - 自动更新 Formula 文件
-   - 更新版本号和 SHA256
-   - 自动提交并推送
-   - 用户可立即 `brew upgrade sql-diff`
-
-> 🔑 **配置说明**: 首次使用需要配置 GitHub Token，详见 [HOMEBREW_AUTOMATION.md](./HOMEBREW_AUTOMATION.md)
+> 📚 **详细说明**: 查看 [完整文档](https://bacchusgift.github.io/sql-diff/)
 
 ### CI/CD 工作流
 
@@ -411,8 +433,6 @@ git push origin 1.0.2
    - 访问 https://github.com/Bacchusgift/sql-diff/settings/secrets/actions
    - 名称：`HOMEBREW_TAP_TOKEN`
    - 值：粘贴你的 token
-
-📚 **详细配置指南**: [HOMEBREW_AUTOMATION.md](./HOMEBREW_AUTOMATION.md)
 
 配置完成后，只需推送 tag，剩下的一切都会自动完成！
 

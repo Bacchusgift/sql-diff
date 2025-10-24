@@ -18,7 +18,11 @@ hero:
 
 features:
   - icon: 🎯
-    title: 交互式输入
+    title: 光标选择交互
+    details: 现代化的交互式界面，方向键移动光标选择功能，配合 ✅ 视觉反馈，无需记忆命令
+  
+  - icon: 📋
+    title: 多行 SQL 输入
     details: 支持多行 SQL 直接粘贴，从 Navicat、MySQL Workbench 等工具复制即用，无需处理换行符
   
   - icon: 🔍
@@ -36,10 +40,6 @@ features:
   - icon: 💻
     title: CLI 友好
     details: 简洁美观的命令行界面，彩色输出，分类显示，支持输出到文件
-  
-  - icon: ⚙️
-    title: 灵活配置
-    details: 支持环境变量和配置文件两种方式，配置命令一键生成，CI/CD 集成简单
 ---
 
 ## 🎯 为什么选择 SQL-Diff？
@@ -124,27 +124,39 @@ make build
 ```
 
 ```bash [🚀 交互式模式]
-# 启动交互式模式
+# 启动交互式模式，光标选择功能
 sql-diff -i
 
-# 按提示粘贴源表 SQL（支持多行）
-# 输入 'END' 或连续两次 Enter 结束输入
-# 再粘贴目标表 SQL
+# 使用方向键移动光标选择：
+# 👉 SQL 表结构比对
+#   AI 生成 CREATE TABLE [需要 AI]
+#   AI 生成 ALTER TABLE [需要 AI]
+
+# 按 Enter 确认选择，然后粘贴 SQL
+# 输入 'END' 或连续两次 Enter 结束
 # 自动生成 DDL！
 ```
 
-```bash [🤖 配置 AI]
-# 一键配置 AI 功能（可选）
-sql-diff config \
-  --ai-enabled \
-  --provider deepseek \
-  --api-key YOUR_KEY \
-  >> ~/.bashrc
-
-source ~/.bashrc
-
-# 启用 AI 分析
+```bash [🤖 AI 生成 SQL]
+# 启动交互式模式 + AI
 sql-diff -i --ai
+
+# 选择 "AI 生成 CREATE TABLE"
+# 输入描述：创建用户表，包含ID、用户名、邮箱、密码、创建时间
+
+# AI 自动生成：
+CREATE TABLE users (
+  id BIGINT NOT NULL AUTO_INCREMENT COMMENT '用户ID',
+  username VARCHAR(50) NOT NULL COMMENT '用户名',
+  email VARCHAR(255) NOT NULL COMMENT '邮箱',
+  password VARCHAR(255) NOT NULL COMMENT '密码',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE INDEX uk_username (username),
+  UNIQUE INDEX uk_email (email)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+# ✨ 自动优化：类型选择、索引设计、字段注释
 ```
 
 ```bash [📝 命令行模式]
@@ -163,7 +175,30 @@ sql-diff -i -o migration.sql
 
 <div class="feature-grid">
 
-### 🎯 交互式输入模式
+### 🎯 光标选择交互
+
+<div class="feature-content">
+
+**现代化的交互式界面**
+
+```bash
+sql-diff -i
+```
+
+✅ **方向键移动光标**  
+✅ **Enter 确认选择**  
+✅ **实时功能说明**  
+✅ **视觉反馈清晰**  
+✅ **无需记忆命令**
+
+**三种功能模式：**
+- 👉 SQL 表结构比对
+- 🤖 AI 生成 CREATE TABLE
+- ✨ AI 生成 ALTER TABLE
+
+</div>
+
+### 多行 SQL 输入
 
 <div class="feature-content">
 
@@ -209,6 +244,28 @@ sql-diff -i
 - ✨ **优化建议** - 针对性的改进建议
 - ⚠️ **潜在风险** - 识别可能的问题
 - 📖 **最佳实践** - 行业标准推荐
+
+</div>
+
+### 🤖 AI 生成 SQL
+
+<div class="feature-content">
+
+**自然语言生成标准 SQL**
+
+✅ **CREATE TABLE 生成** - 描述需求即可生成完整表结构  
+✅ **ALTER TABLE 生成** - 基于现有表生成变更语句  
+✅ **智能类型推断** - 自动选择合适的字段类型  
+✅ **索引优化** - 自动添加合理的索引  
+✅ **最佳实践** - 应用行业标准和规范
+
+**示例**：
+```
+输入：创建用户表，包含ID、用户名、邮箱、密码
+输出：完整的 CREATE TABLE 语句，包含索引、注释、约束
+```
+
+📖 **[查看详细示例](/ai/sql-generation)**
 
 </div>
 
