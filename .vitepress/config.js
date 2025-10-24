@@ -49,6 +49,7 @@ export default defineConfig({
         {
           text: '核心功能',
           items: [
+            { text: '交互式光标选择', link: '/guide/interactive' },
             { text: '表结构比对', link: '/guide/comparison' },
             { text: 'DDL 生成', link: '/guide/ddl-generation' },
             { text: '命令行工具', link: '/guide/cli' }
@@ -70,6 +71,7 @@ export default defineConfig({
           text: 'AI 功能',
           items: [
             { text: 'AI 指南', link: '/ai/guide' },
+            { text: 'AI 生成 SQL', link: '/ai/sql-generation' },
             { text: 'DeepSeek 集成', link: '/ai/deepseek' },
             { text: '最佳实践', link: '/ai/best-practices' }
           ]

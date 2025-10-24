@@ -12,9 +12,9 @@ import (
 )
 
 var (
-	alterTable      string
-	alterDesc       string
-	alterOutput     string
+	alterTable       string
+	alterDesc        string
+	alterOutput      string
 	alterInteractive bool
 )
 
@@ -120,7 +120,7 @@ func runAlter(cmd *cobra.Command, args []string) error {
 	fmt.Println()
 
 	infoColor.Println("🤖 正在使用 AI 生成 SQL...")
-	
+
 	// 创建 AI Provider
 	provider, err := ai.NewProvider(&cfg.AI)
 	if err != nil {
@@ -140,10 +140,10 @@ func runAlter(cmd *cobra.Command, args []string) error {
 	successColor.Println("✓ 生成成功！")
 	successColor.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 	fmt.Println()
-	
+
 	color.New(color.FgWhite, color.Bold).Println("📋 生成的 ALTER TABLE 语句:")
 	fmt.Println()
-	
+
 	// 处理多条 SQL 语句
 	sqlStatements := strings.Split(sql, "\n")
 	for _, stmt := range sqlStatements {
@@ -163,7 +163,7 @@ func runAlter(cmd *cobra.Command, args []string) error {
 				content.WriteString(stmt + ";\n")
 			}
 		}
-		
+
 		if err := os.WriteFile(alterOutput, []byte(content.String()), 0644); err != nil {
 			errorColor.Printf("✗ 写入文件失败: %v\n", err)
 			return err
@@ -172,6 +172,6 @@ func runAlter(cmd *cobra.Command, args []string) error {
 	}
 
 	successColor.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-	
+
 	return nil
 }

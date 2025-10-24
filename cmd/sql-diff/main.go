@@ -6,9 +6,9 @@ import (
 
 // 版本信息（由编译时注入）
 var (
-	Version   = "dev"      // 版本号
-	BuildTime = "unknown"  // 构建时间
-	GitCommit = "unknown"  // Git 提交哈希
+	Version   = "dev"     // 版本号
+	BuildTime = "unknown" // 构建时间
+	GitCommit = "unknown" // Git 提交哈希
 )
 
 func main() {

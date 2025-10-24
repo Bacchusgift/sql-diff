@@ -4,72 +4,83 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	"strconv"
 	"strings"
 
 	"github.com/Bacchusgift/sql-diff/internal/ai"
 	"github.com/Bacchusgift/sql-diff/internal/config"
 	"github.com/fatih/color"
+	"github.com/manifoldco/promptui"
 )
 
-// showModeMenu 显示功能选择菜单
+// ModeOption 功能模式选项
+type ModeOption struct {
+	Name        string
+	Description string
+	Value       int
+	NeedAI      bool
+	Enabled     bool
+}
+
+// showModeMenu 显示功能选择菜单（使用光标选择）
 func showModeMenu(aiEnabled bool) (int, error) {
-	titleColor := color.New(color.FgCyan, color.Bold)
-	optionColor := color.New(color.FgWhite, color.Bold)
-	descColor := color.New(color.FgWhite)
-	disabledColor := color.New(color.FgHiBlack) // 使用灰色显示禁用选项
-
-	titleColor.Println("📋 请选择功能模式：")
-	fmt.Println()
-
-	// 模式 1：SQL 表结构比对
-	optionColor.Print("  [1] ")
-	descColor.Println("SQL 表结构比对")
-	fmt.Println("      比较两个表结构差异，自动生成 DDL 补全语句")
-	fmt.Println()
-
-	// 模式 2：AI 生成 CREATE TABLE
-	if aiEnabled {
-		optionColor.Print("  [2] ")
-		color.New(color.FgGreen).Println("AI 生成 CREATE TABLE (需要 AI)")
-		fmt.Println("      根据自然语言描述，AI 生成完整的建表语句")
-	} else {
-		disabledColor.Print("  [2] ")
-		disabledColor.Println("AI 生成 CREATE TABLE (需要 AI) [未启用]")
-		fmt.Println("      根据自然语言描述，AI 生成完整的建表语句")
+	// 定义功能选项
+	options := []ModeOption{
+		{
+			Name:        "SQL 表结构比对",
+			Description: "比较两个表结构差异，自动生成 DDL 补全语句",
+			Value:       1,
+			NeedAI:      false,
+			Enabled:     true,
+		},
+		{
+			Name:        "AI 生成 CREATE TABLE",
+			Description: "根据自然语言描述，AI 生成完整的建表语句",
+			Value:       2,
+			NeedAI:      true,
+			Enabled:     aiEnabled,
+		},
+		{
+			Name:        "AI 生成 ALTER TABLE",
+			Description: "基于现有表结构 + 自然语言描述，AI 生成 DDL 变更语句",
+			Value:       3,
+			NeedAI:      true,
+			Enabled:     aiEnabled,
+		},
 	}
-	fmt.Println()
 
-	// 模式 3：AI 生成 ALTER TABLE
-	if aiEnabled {
-		optionColor.Print("  [3] ")
-		color.New(color.FgGreen).Println("AI 生成 ALTER TABLE (需要 AI)")
-		fmt.Println("      基于现有表结构 + 自然语言描述，AI 生成 DDL 变更语句")
-	} else {
-		disabledColor.Print("  [3] ")
-		disabledColor.Println("AI 生成 ALTER TABLE (需要 AI) [未启用]")
-		fmt.Println("      基于现有表结构 + 自然语言描述，AI 生成 DDL 变更语句")
+	// 创建选择模板
+	templates := &promptui.SelectTemplates{
+		Label:    "{{ . }}",
+		Active:   "\U0001F449 {{ .Name | cyan | bold }}{{ if not .Enabled }} {{ `[需要 AI]` | red }}{{ end }}",
+		Inactive: "  {{ .Name | white }}{{ if not .Enabled }} {{ `[需要 AI]` | faint }}{{ end }}",
+		Selected: "\U00002705 {{ .Name | green | bold }}",
+		Details: `
+--------- 功能说明 ---------
+{{ "描述:" | faint }} {{ .Description }}{{ if .NeedAI }}
+{{ "要求:" | faint }} 需要启用 AI 功能{{ end }}`,
 	}
-	fmt.Println()
 
-	// 读取用户选择
-	reader := bufio.NewReader(os.Stdin)
-	color.New(color.FgYellow).Print("请输入选项编号 [1-3]: ")
+	// 创建选择器
+	prompt := promptui.Select{
+		Label:     "📋 请选择功能模式",
+		Items:     options,
+		Templates: templates,
+		Size:      3,
+		CursorPos: 0,
+	}
 
-	input, err := reader.ReadString('\n')
+	// 执行选择
+	idx, _, err := prompt.Run()
 	if err != nil {
-		return 0, fmt.Errorf("读取输入失败: %v", err)
+		return 0, fmt.Errorf("选择被取消: %v", err)
 	}
 
-	input = strings.TrimSpace(input)
-	mode, err := strconv.Atoi(input)
-	if err != nil || mode < 1 || mode > 3 {
-		return 0, fmt.Errorf("无效的选项: %s", input)
-	}
+	selected := options[idx]
 
-	// 检查 AI 功能是否启用
-	if (mode == 2 || mode == 3) && !aiEnabled {
-		errorColor.Println("\n✗ 该功能需要启用 AI")
+	// 检查是否启用
+	if !selected.Enabled {
+		fmt.Println()
+		errorColor.Println("✗ 该功能需要启用 AI")
 		fmt.Println()
 		fmt.Println("请通过以下方式之一启用 AI：")
 		fmt.Println("  1. 配置文件: 编辑 .sql-diff-config.yaml，设置 ai.enabled: true")
@@ -81,7 +92,7 @@ func showModeMenu(aiEnabled bool) (int, error) {
 	}
 
 	fmt.Println()
-	return mode, nil
+	return selected.Value, nil
 }
 
 // runCompareMode SQL 表结构比对模式
@@ -131,6 +142,19 @@ func runCompareMode(cfg *config.Config) error {
 	return processComparison(sourceSQL, targetSQL, cfg)
 }
 
+// readSingleLineInput 读取单行输入（支持完整的一行文本，包含空格）
+func readSingleLineInput() (string, error) {
+	// 使用 bufio.Scanner 更稳定
+	scanner := bufio.NewScanner(os.Stdin)
+	if !scanner.Scan() {
+		if err := scanner.Err(); err != nil {
+			return "", err
+		}
+		return "", fmt.Errorf("读取输入失败")
+	}
+	return strings.TrimSpace(scanner.Text()), nil
+}
+
 // runGenerateTableMode AI 生成 CREATE TABLE 模式
 func runGenerateTableMode(cfg *config.Config) error {
 	infoColor.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
@@ -143,9 +167,8 @@ func runGenerateTableMode(cfg *config.Config) error {
 	color.New(color.FgCyan).Println("（示例：创建用户表，包含 ID、用户名、邮箱、密码、创建时间）")
 	fmt.Println()
 
-	reader := bufio.NewReader(os.Stdin)
 	color.New(color.FgWhite).Print("描述: ")
-	description, err := reader.ReadString('\n')
+	description, err := readSingleLineInput()
 	if err != nil {
 		return fmt.Errorf("读取描述失败: %v", err)
 	}
@@ -217,9 +240,8 @@ func runGenerateAlterMode(cfg *config.Config) error {
 	color.New(color.FgCyan).Println("（示例：添加手机号字段、邮箱改为唯一索引）")
 	fmt.Println()
 
-	reader := bufio.NewReader(os.Stdin)
 	color.New(color.FgWhite).Print("描述: ")
-	description, err := reader.ReadString('\n')
+	description, err := readSingleLineInput()
 	if err != nil {
 		return fmt.Errorf("读取描述失败: %v", err)
 	}
@@ -273,10 +295,9 @@ func runGenerateAlterMode(cfg *config.Config) error {
 
 // askSaveToFile 询问用户是否保存到文件
 func askSaveToFile(content string) error {
-	reader := bufio.NewReader(os.Stdin)
 	color.New(color.FgYellow).Print("是否保存到文件? [y/N]: ")
 
-	input, err := reader.ReadString('\n')
+	input, err := readSingleLineInput()
 	if err != nil {
 		return nil // 忽略错误，不影响主流程
 	}
@@ -289,7 +310,7 @@ func askSaveToFile(content string) error {
 
 	// 读取文件名
 	color.New(color.FgYellow).Print("请输入文件名: ")
-	filename, err := reader.ReadString('\n')
+	filename, err := readSingleLineInput()
 	if err != nil {
 		errorColor.Printf("✗ 读取文件名失败: %v\n", err)
 		return nil

@@ -380,41 +380,41 @@ func cleanSQLResponse(response string) string {
 	response = strings.ReplaceAll(response, "```sql", "")
 	response = strings.ReplaceAll(response, "```mysql", "")
 	response = strings.ReplaceAll(response, "```", "")
-	
+
 	// 移除首尾空白
 	response = strings.TrimSpace(response)
-	
+
 	// 如果响应中包含多行，尝试提取 CREATE TABLE 或 ALTER TABLE 部分
 	lines := strings.Split(response, "\n")
 	var sqlLines []string
 	inSQL := false
-	
+
 	for _, line := range lines {
 		trimmedLine := strings.TrimSpace(line)
 		upperLine := strings.ToUpper(trimmedLine)
-		
+
 		// 检测 SQL 语句开始
-		if strings.HasPrefix(upperLine, "CREATE TABLE") || 
-		   strings.HasPrefix(upperLine, "ALTER TABLE") {
+		if strings.HasPrefix(upperLine, "CREATE TABLE") ||
+			strings.HasPrefix(upperLine, "ALTER TABLE") {
 			inSQL = true
 		}
-		
+
 		if inSQL {
 			sqlLines = append(sqlLines, line)
-			
+
 			// 检测 SQL 语句结束（遇到分号）
 			if strings.HasSuffix(trimmedLine, ";") {
 				break
 			}
 		}
 	}
-	
+
 	if len(sqlLines) > 0 {
 		response = strings.Join(sqlLines, "\n")
 	}
-	
+
 	// 移除末尾的分号（工具会统一添加）
 	response = strings.TrimSuffix(strings.TrimSpace(response), ";")
-	
+
 	return response
 }

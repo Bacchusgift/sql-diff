@@ -88,7 +88,7 @@ func runGenerate(cmd *cobra.Command, args []string) error {
 	fmt.Println()
 
 	infoColor.Println("🤖 正在使用 AI 生成 SQL...")
-	
+
 	// 创建 AI Provider
 	provider, err := ai.NewProvider(&cfg.AI)
 	if err != nil {
@@ -108,7 +108,7 @@ func runGenerate(cmd *cobra.Command, args []string) error {
 	successColor.Println("✓ 生成成功！")
 	successColor.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 	fmt.Println()
-	
+
 	color.New(color.FgWhite, color.Bold).Println("📋 生成的 CREATE TABLE 语句:")
 	fmt.Println()
 	fmt.Println(sql + ";")
@@ -125,6 +125,6 @@ func runGenerate(cmd *cobra.Command, args []string) error {
 	}
 
 	successColor.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-	
+
 	return nil
 }
