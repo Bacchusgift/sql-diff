@@ -14,17 +14,17 @@ echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━�
 echo ""
 
 # 要从 Git 历史中彻底删除的文件和目录
+# 注意：只删除真正的内部文档！
 FILES_TO_REMOVE=(
-    ".UPDATE_SUMMARY.md"
-    "architecture.md"
-    "docs/AI_GUIDE.md"
-    "docs/ARCHITECTURE.md"
-    "docs/ENV_CONFIG.md"
-    "docs/EXAMPLES.md"
-    "docs/QUICKSTART.md"
-    "docs/"
-    ".AI_SQL_GENERATION_DOC.md"
-    "Formula/"
+    ".UPDATE_SUMMARY.md"              # 项目更新摘要（内部跟踪）
+    ".AI_SQL_GENERATION_DOC.md"       # AI 相关内部文档
+    "docs/AI_GUIDE.md"                # 早期 AI 指南（已迁移到 VitePress）
+    "docs/ARCHITECTURE.md"            # 早期架构文档（已迁移）
+    "docs/ENV_CONFIG.md"              # 早期环境配置（已迁移）
+    "docs/EXAMPLES.md"                # 早期示例（已迁移）
+    "docs/QUICKSTART.md"              # 早期快速开始（已迁移）
+    "docs/"                           # 早期文档目录
+    "Formula/"                        # Homebrew Formula（已迁移到独立仓库）
 )
 
 echo -e "${YELLOW}⚠️  警告：此操作将重写 Git 历史！${NC}"
