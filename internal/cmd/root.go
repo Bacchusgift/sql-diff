@@ -55,23 +55,30 @@ var rootCmd = &cobra.Command{
 	Use:   "sql-diff",
 	Short: "SQL 表结构比对工具",
 	Long: `sql-diff 是一个基于 AST 的 SQL 表结构比对工具。
-	
-可以比对两个表结构的差异，并自动生成 DDL 补全语句。
-支持可选的 AI 智能分析功能，提供优化建议。`,
-	Example: `  # 交互式模式（推荐，支持多行粘贴）
+
+核心功能：
+  • 精准比对表结构差异，自动生成 DDL 语句
+  • AI 自然语言生成 SQL（需配置 AI）
+  • 交互式模式，支持多行粘贴
+  • 可选 AI 智能分析，提供优化建议`,
+	Example: `  # 1️⃣  表结构比对（交互式，推荐）
   sql-diff -i
   
-  # 基础用法
+  # 2️⃣  AI 生成 CREATE TABLE
+  sql-diff generate -d "创建用户表：ID、用户名、邮箱、密码"
+  
+  # 3️⃣  AI 生成 ALTER TABLE（交互式）
+  sql-diff alter -i -d "添加手机号字段"
+  
+  # 4️⃣  命令行模式比对
   sql-diff -s "CREATE TABLE users (id INT)" -t "CREATE TABLE users (id INT, name VARCHAR(100))"
   
-  # 启用 AI 分析
-  sql-diff -s "..." -t "..." --ai
-  
-  # 交互式 + AI
+  # 5️⃣  启用 AI 分析
   sql-diff -i --ai
   
-  # 输出到文件
-  sql-diff -i -o output.sql`,
+  # 查看详细帮助
+  sql-diff generate --help
+  sql-diff alter --help`,
 	Version: version, // 设置版本号，支持 --version 和 -v
 	RunE:    run,
 }

@@ -24,12 +24,25 @@ var alterCmd = &cobra.Command{
 	Short: "根据自然语言描述生成 ALTER TABLE 语句",
 	Long: `使用 AI 根据现有表结构和自然语言描述生成 MySQL ALTER TABLE 语句。
 
-示例：
-  # 命令行模式
-  sql-diff alter -t "CREATE TABLE users ..." -d "添加手机号字段、邮箱改为唯一索引"
+功能特点：
+  ✓ 基于现有表结构生成变更语句
+  ✓ 支持交互式输入表结构（推荐）
+  ✓ 可生成多条 ALTER 语句
+  ✓ 考虑数据迁移安全性
+  ✓ 保持与现有表的一致性
+
+注意：此功能需要启用 AI（配置 .sql-diff-config.yaml 或使用 --ai 参数）`,
+	Example: `  # 交互式模式（推荐，支持粘贴大型表结构）
+  sql-diff alter -i -d "添加手机号字段、邮箱改为唯一索引"
   
-  # 交互式模式
-  sql-diff alter -i -d "添加商品状态字段，默认值为上架"`,
+  # 命令行模式
+  sql-diff alter -t "CREATE TABLE users (id INT, name VARCHAR(100));" -d "添加邮箱字段"
+  
+  # 复杂修改
+  sql-diff alter -i -d "添加实名认证字段：真实姓名、身份证号、认证状态、认证时间"
+  
+  # 输出到文件
+  sql-diff alter -i -d "添加商品状态字段" -o alter_product.sql`,
 	RunE: runAlter,
 }
 

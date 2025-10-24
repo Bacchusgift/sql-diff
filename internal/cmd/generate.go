@@ -21,9 +21,25 @@ var generateCmd = &cobra.Command{
 	Short: "根据自然语言描述生成 CREATE TABLE 语句",
 	Long: `使用 AI 根据自然语言描述生成标准的 MySQL CREATE TABLE 语句。
 
-示例：
-  sql-diff generate -d "创建一个用户表，包含 ID、用户名、邮箱、密码、创建时间"
-  sql-diff generate -d "创建商品表：商品ID、名称、价格、库存、分类、状态" -o product.sql`,
+功能特点：
+  ✓ 自动推断字段类型（VARCHAR、INT、DECIMAL、DATETIME 等）
+  ✓ 自动添加主键、索引、唯一约束
+  ✓ 应用 MySQL 最佳实践（InnoDB、UTF8MB4、注释等）
+  ✓ 使用标准命名规范（snake_case）
+  ✓ 支持输出到文件
+
+注意：此功能需要启用 AI（配置 .sql-diff-config.yaml 或使用 --ai 参数）`,
+	Example: `  # 基础用法
+  sql-diff generate -d "创建用户表，包含 ID、用户名、邮箱、密码、创建时间"
+  
+  # 复杂示例
+  sql-diff generate -d "创建订单表：订单号（唯一）、用户ID（外键）、订单金额（精确到分）、订单状态、下单时间"
+  
+  # 输出到文件
+  sql-diff generate -d "创建商品表：商品ID、名称、价格、库存" -o product.sql
+  
+  # 启用 AI（如果配置文件中未启用）
+  sql-diff generate --ai -d "创建博客文章表"`,
 	RunE: runGenerate,
 }
 
