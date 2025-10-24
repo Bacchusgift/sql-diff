@@ -40,3 +40,13 @@ config.yaml
 node_modules/
 .vitepress/cache
 .vitepress/dist
+
+# Internal development docs (should not be public)
+.AI_SQL/
+.AI_SQL_ENHANCED/
+.AI_MIGRATION/
+.AI_INTERACTIVE/
+.AI_CONFIG/
+.AI_*/
+*.draft.md
+*.internal.md
