@@ -119,8 +119,6 @@ func runAlter(cmd *cobra.Command, args []string) error {
 	color.New(color.FgCyan).Printf("📝 修改需求: %s\n", alterDesc)
 	fmt.Println()
 
-	infoColor.Println("🤖 正在使用 AI 生成 SQL...")
-
 	// 创建 AI Provider
 	provider, err := ai.NewProvider(&cfg.AI)
 	if err != nil {
@@ -128,16 +126,21 @@ func runAlter(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	// 显示 loading 动画
+	spinner := NewSpinner("🤖 AI 正在生成 ALTER TABLE 语句...")
+	spinner.Start()
+
 	// 调用 AI 生成 SQL
 	sql, err := provider.GenerateAlterTable(currentDDL, alterDesc)
 	if err != nil {
-		errorColor.Printf("✗ 生成失败: %v\n", err)
+		spinner.Error(fmt.Sprintf("生成失败: %v", err))
 		return err
 	}
 
+	// 停止 loading 并显示成功消息
+	spinner.Success("生成成功！")
+
 	// 显示结果
-	fmt.Println()
-	successColor.Println("✓ 生成成功！")
 	successColor.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 	fmt.Println()
 
