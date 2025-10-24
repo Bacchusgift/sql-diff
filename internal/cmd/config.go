@@ -18,7 +18,7 @@ var (
 	aiModel    string
 	aiTimeout  int
 	showEnv    bool
-	quietMode bool // 静默模式，只输出 export 命令
+	quietMode  bool // 静默模式，只输出 export 命令
 )
 
 // configCmd 配置管理命令
