@@ -74,9 +74,9 @@ build-all: clean
 ## build-linux: 编译 Linux 平台 (amd64 + arm64)
 build-linux:
 	@echo "编译 Linux 平台..."
-	@GOOS=linux GOARCH=amd64 go build $(GOFLAGS) $(LDFLAGS) -o $(DIST_DIR)/$(BINARY_NAME)-linux-amd64 $(MAIN_PATH)
-	@GOOS=linux GOARCH=arm64 go build $(GOFLAGS) $(LDFLAGS) -o $(DIST_DIR)/$(BINARY_NAME)-linux-arm64 $(MAIN_PATH)
-	@echo "✓ Linux 编译完成"
+	@CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build $(GOFLAGS) $(LDFLAGS) -o $(DIST_DIR)/$(BINARY_NAME)-linux-amd64 $(MAIN_PATH)
+	@CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build $(GOFLAGS) $(LDFLAGS) -o $(DIST_DIR)/$(BINARY_NAME)-linux-arm64 $(MAIN_PATH)
+	@echo "✓ Linux 编译完成 (静态链接，无 GLIBC 依赖)"
 
 ## build-darwin: 编译 macOS 平台 (amd64 + arm64)
 build-darwin:
