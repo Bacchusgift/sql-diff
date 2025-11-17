@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SQL-Diff Web</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS + DaisyUI -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.4.19/dist/full.min.css" rel="stylesheet" type="text/css" />
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="/css/style.css">
+    
+    <!-- Tailwind Config -->
+    <script>
+        tailwind.config = {
+            darkMode: ['class', '[data-theme="dark"]'],
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'Fira Code', 'Consolas', 'monospace']
+                    },
+                    colors: {
+                        primary: '#6366f1',
+                        success: '#10b981',
+                        warning: '#f59e0b',
+                        error: '#ef4444'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-base-200 font-sans">
+    <!-- 顶部导航栏 -->
+    <header class="navbar bg-base-100 shadow-md sticky top-0 z-50">
+        <div class="container mx-auto px-4">
+            <div class="flex-1">
+                <a class="flex items-center gap-2" href="#">
+                    <i data-lucide="database" class="w-8 h-8 text-primary"></i>
+                    <span class="text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">SQL-Diff</span>
+                </a>
+            </div>
+            <div class="flex-none">
+                <div class="tabs tabs-boxed bg-base-200">
+                    <button class="tab tab-active" data-page="compare">
+                        <i data-lucide="git-compare" class="w-4 h-4 mr-2"></i>
+                        表结构比对
+                    </button>
+                    <button class="tab" data-page="ai-create">
+                        <i data-lucide="sparkles" class="w-4 h-4 mr-2"></i>
+                        AI 生成 CREATE
+                    </button>
+                    <button class="tab" data-page="ai-alter">
+                        <i data-lucide="wand-2" class="w-4 h-4 mr-2"></i>
+                        AI 生成 ALTER
+                    </button>
+                    <button class="tab" data-page="config">
+                        <i data-lucide="settings" class="w-4 h-4 mr-2"></i>
+                        配置
+                    </button>
+                </div>
+                <button id="theme-toggle" class="btn btn-ghost btn-circle ml-2">
+                    <i data-lucide="sun" class="w-5 h-5"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主内容区 -->
+    <main class="container mx-auto px-4 py-8 min-h-screen">
+        <!-- 表结构比对页 -->
+        <div id="page-compare" class="page active">
+            <div class="mb-8">
+                <h2 class="text-3xl font-bold mb-2 flex items-center gap-2">
+                    <i data-lucide="git-compare" class="w-8 h-8 text-primary"></i>
+                    表结构比对
+                </h2>
+                <p class="text-base-content/60">比较两个表结构差异，自动生成 DDL 补全语句</p>
+            </div>
+
+            <div class="grid gap-6">
+                <!-- 源表输入 -->
+                <div class="card bg-base-100 shadow-lg">
+                    <div class="card-body">
+                        <label class="label">
+                            <span class="label-text text-lg font-semibold flex items-center gap-2">
+                                <i data-lucide="file-code" class="w-5 h-5"></i>
+                                源表 CREATE TABLE 语句
+                            </span>
+                            <button class="btn btn-xs btn-ghost" id="example-source">
+                                <i data-lucide="lightbulb" class="w-3 h-3 mr-1"></i>
+                                示例
+                            </button>
+                        </label>
+                        <textarea id="source-sql" class="textarea textarea-bordered h-48 font-mono text-sm" placeholder="粘贴源表的 CREATE TABLE 语句..."></textarea>
+                        <div id="source-preview" class="mt-4" style="display:none;"></div>
+                    </div>
+                </div>
+
+                <!-- 目标表输入 -->
+                <div class="card bg-base-100 shadow-lg">
+                    <div class="card-body">
+                        <label class="label">
+                            <span class="label-text text-lg font-semibold flex items-center gap-2">
+                                <i data-lucide="file-code" class="w-5 h-5"></i>
+                                目标表 CREATE TABLE 语句
+                            </span>
+                            <button class="btn btn-xs btn-ghost" id="example-target">
+                                <i data-lucide="lightbulb" class="w-3 h-3 mr-1"></i>
+                                示例
+                            </button>
+                        </label>
+                        <textarea id="target-sql" class="textarea textarea-bordered h-48 font-mono text-sm" placeholder="粘贴目标表的 CREATE TABLE 语句..."></textarea>
+                        <div id="target-preview" class="mt-4" style="display:none;"></div>
+                    </div>
+                </div>
+
+                <!-- 操作按钮 -->
+                <div class="flex gap-3 items-center">
+                    <label class="label cursor-pointer gap-2">
+                        <input type="checkbox" id="enable-ai-compare" class="checkbox checkbox-primary" />
+                        <span class="label-text">启用 AI 智能分析</span>
+                    </label>
+                    <div class="flex-1"></div>
+                    <button id="btn-compare" class="btn btn-primary gap-2">
+                        <i data-lucide="play" class="w-4 h-4"></i>
+                        开始比对
+                    </button>
+                </div>
+            </div>
+
+            <!-- 比对结果 -->
+            <div id="compare-result" class="mt-8" style="display: none;">
+                <div class="card bg-base-100 shadow-lg">
+                    <div class="card-body">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="card-title text-xl">比对结果</h3>
+                            <div class="flex gap-2">
+                                <button id="btn-copy-result" class="btn btn-sm btn-ghost gap-1">
+                                    <i data-lucide="copy" class="w-4 h-4"></i>
+                                    复制
+                                </button>
+                                <button id="btn-download-result" class="btn btn-sm btn-ghost gap-1">
+                                    <i data-lucide="download" class="w-4 h-4"></i>
+                                    下载
+                                </button>
+                            </div>
+                        </div>
+                        <div id="compare-result-content"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI 生成 CREATE TABLE 页 -->
+        <div id="page-ai-create" class="page" style="display:none;">
+            <div class="mb-8">
+                <h2 class="text-3xl font-bold mb-2 flex items-center gap-2">
+                    <i data-lucide="sparkles" class="w-8 h-8 text-primary"></i>
+                    AI 生成 CREATE TABLE
+                </h2>
+                <p class="text-base-content/60">根据自然语言描述，AI 生成完整的建表语句</p>
+            </div>
+
+            <div class="card bg-base-100 shadow-lg">
+                <div class="card-body">
+                    <label class="label">
+                        <span class="label-text text-lg font-semibold">描述您要创建的表</span>
+                    </label>
+                    <textarea id="create-description" class="textarea textarea-bordered h-32" placeholder="例如: 创建用户表，包含ID、用户名、邮箱、密码、创建时间"></textarea>
+                    <div class="card-actions justify-end mt-4">
+                        <button id="btn-generate-create" class="btn btn-primary gap-2">
+                            <i data-lucide="sparkles" class="w-4 h-4"></i>
+                            生成
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="create-result" class="mt-8" style="display: none;">
+                <div class="card bg-base-100 shadow-lg">
+                    <div class="card-body">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="card-title">生成结果</h3>
+                            <div class="flex gap-2">
+                                <button id="btn-copy-create" class="btn btn-sm btn-ghost gap-1">
+                                    <i data-lucide="copy" class="w-4 h-4"></i>
+                                    复制
+                                </button>
+                                <button id="btn-download-create" class="btn btn-sm btn-ghost gap-1">
+                                    <i data-lucide="download" class="w-4 h-4"></i>
+                                    下载
+                                </button>
+                            </div>
+                        </div>
+                        <div id="create-result-content"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI 生成 ALTER TABLE 页 -->
+        <div id="page-ai-alter" class="page" style="display:none;">
+            <div class="mb-8">
+                <h2 class="text-3xl font-bold mb-2 flex items-center gap-2">
+                    <i data-lucide="wand-2" class="w-8 h-8 text-primary"></i>
+                    AI 生成 ALTER TABLE
+                </h2>
+                <p class="text-base-content/60">基于现有表结构 + 自然语言描述，AI 生成 DDL 变更语句</p>
+            </div>
+
+            <div class="grid gap-6">
+                <div class="card bg-base-100 shadow-lg">
+                    <div class="card-body">
+                        <label class="label">
+                            <span class="label-text text-lg font-semibold">现有表的 CREATE TABLE 语句</span>
+                        </label>
+                        <textarea id="current-ddl" class="textarea textarea-bordered h-48 font-mono text-sm" placeholder="粘贴现有表的 CREATE TABLE 语句..."></textarea>
+                    </div>
+                </div>
+
+                <div class="card bg-base-100 shadow-lg">
+                    <div class="card-body">
+                        <label class="label">
+                            <span class="label-text text-lg font-semibold">描述您要做的修改</span>
+                        </label>
+                        <textarea id="alter-description" class="textarea textarea-bordered h-32" placeholder="例如: 添加手机号字段、邮箱改为唯一索引"></textarea>
+                        <div class="card-actions justify-end mt-4">
+                            <button id="btn-generate-alter" class="btn btn-primary gap-2">
+                                <i data-lucide="wand-2" class="w-4 h-4"></i>
+                                生成
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="alter-result" class="mt-8" style="display: none;">
+                <div class="card bg-base-100 shadow-lg">
+                    <div class="card-body">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="card-title">生成结果</h3>
+                            <div class="flex gap-2">
+                                <button id="btn-copy-alter" class="btn btn-sm btn-ghost gap-1">
+                                    <i data-lucide="copy" class="w-4 h-4"></i>
+                                    复制
+                                </button>
+                                <button id="btn-download-alter" class="btn btn-sm btn-ghost gap-1">
+                                    <i data-lucide="download" class="w-4 h-4"></i>
+                                    下载
+                                </button>
+                            </div>
+                        </div>
+                        <div id="alter-result-content"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 配置页 -->
+        <div id="page-config" class="page" style="display:none;">
+            <div class="mb-8">
+                <h2 class="text-3xl font-bold mb-2 flex items-center gap-2">
+                    <i data-lucide="settings" class="w-8 h-8 text-primary"></i>
+                    配置管理
+                </h2>
+                <p class="text-base-content/60">管理 AI 相关配置</p>
+            </div>
+
+            <form id="config-form">
+                <div class="card bg-base-100 shadow-lg mb-6">
+                    <div class="card-body">
+                        <h3 class="card-title mb-4">AI 配置</h3>
+                        
+                        <div class="form-control">
+                            <label class="label cursor-pointer justify-start gap-3">
+                                <input type="checkbox" id="ai-enabled" class="toggle toggle-primary" />
+                                <span class="label-text">启用 AI 功能</span>
+                            </label>
+                        </div>
+
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">提供商</span>
+                            </label>
+                            <select id="ai-provider" class="select select-bordered">
+                                <option value="deepseek">DeepSeek</option>
+                                <option value="openai">OpenAI</option>
+                                <option value="custom">自定义</option>
+                            </select>
+                        </div>
+
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">API Key</span>
+                            </label>
+                            <div class="join w-full">
+                                <input type="password" id="ai-api-key" class="input input-bordered join-item flex-1" placeholder="sk-...">
+                                <button type="button" id="btn-toggle-key" class="btn join-item">显示</button>
+                            </div>
+                        </div>
+
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">API Endpoint</span>
+                            </label>
+                            <input type="text" id="ai-endpoint" class="input input-bordered" placeholder="https://api.deepseek.com/v1">
+                        </div>
+
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">Model</span>
+                            </label>
+                            <input type="text" id="ai-model" class="input input-bordered" placeholder="deepseek-chat">
+                        </div>
+
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">Timeout (秒)</span>
+                            </label>
+                            <input type="number" id="ai-timeout" class="input input-bordered" value="30" min="1" max="300">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card bg-base-100 shadow-lg mb-6">
+                    <div class="card-body">
+                        <h3 class="card-title mb-4">保存方式</h3>
+                        <div class="form-control">
+                            <label class="label cursor-pointer justify-start gap-3">
+                                <input type="radio" name="save-to" value="file" class="radio radio-primary" checked>
+                                <span class="label-text">保存到配置文件 (.sql-diff-config.yaml)</span>
+                            </label>
+                        </div>
+                        <div class="form-control">
+                            <label class="label cursor-pointer justify-start gap-3">
+                                <input type="radio" name="save-to" value="env" class="radio radio-primary">
+                                <span class="label-text">生成环境变量命令</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex gap-3">
+                    <button type="submit" class="btn btn-primary gap-2">
+                        <i data-lucide="save" class="w-4 h-4"></i>
+                        保存配置
+                    </button>
+                    <button type="button" id="btn-load-config" class="btn btn-ghost gap-2">
+                        <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                        重新加载
+                    </button>
+                </div>
+            </form>
+
+            <div id="config-result" class="mt-8" style="display: none;">
+                <div class="card bg-base-100 shadow-lg">
+                    <div class="card-body">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="card-title">环境变量命令</h3>
+                            <button id="btn-copy-env" class="btn btn-sm btn-ghost gap-1">
+                                <i data-lucide="copy" class="w-4 h-4"></i>
+                                复制
+                            </button>
+                        </div>
+                        <div id="config-result-content"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 底部状态栏 -->
+    <footer class="footer footer-center p-4 bg-base-100 text-base-content border-t">
+        <div class="flex items-center gap-4">
+            <div class="flex items-center gap-2">
+                <span class="w-2 h-2 bg-success rounded-full animate-pulse"></span>
+                <span class="text-sm">服务运行中</span>
+            </div>
+            <span class="text-sm opacity-50">v1.0.0</span>
+        </div>
+    </footer>
+
+    <!-- 加载提示 -->
+    <div id="loading" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden">
+        <div class="flex flex-col items-center justify-center h-full">
+            <span class="loading loading-spinner loading-lg text-primary"></span>
+            <p class="text-white mt-4 text-lg">处理中...</p>
+        </div>
+    </div>
+
+    <!-- 消息提示 -->
+    <div id="toast" class="toast toast-top toast-end z-50 hidden"></div>
+
+    <script src="/js/theme.js"></script>
+    <script src="/js/app.js"></script>
+    <script src="/js/table-preview.js"></script>
+    <script src="/js/config.js"></script>
+    <script src="/js/compare.js"></script>
+    <script src="/js/ai.js"></script>
+    
+    <!-- 初始化 Lucide 图标 -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+        });
+    </script>
+</body>
+</html>
