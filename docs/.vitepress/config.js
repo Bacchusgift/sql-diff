@@ -52,7 +52,8 @@ export default defineConfig({
             { text: '交互式光标选择', link: '/guide/interactive' },
             { text: '表结构比对', link: '/guide/comparison' },
             { text: 'DDL 生成', link: '/guide/ddl-generation' },
-            { text: '命令行工具', link: '/guide/cli' }
+            { text: '命令行工具', link: '/guide/cli' },
+            { text: 'Web 可视化界面', link: '/guide/web-ui' }
           ]
         }
       ],

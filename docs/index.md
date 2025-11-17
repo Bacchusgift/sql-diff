@@ -40,6 +40,10 @@ features:
   - icon: 💻
     title: CLI 友好
     details: 简洁美观的命令行界面，彩色输出，分类显示，支持输出到文件
+  
+  - icon: 🌐
+    title: Web 界面
+    details: 现代化的 Web 可视化界面，支持浏览器操作，主题切换，AI 功能集成
 ---
 
 ## 🎯 为什么选择 SQL-Diff？
