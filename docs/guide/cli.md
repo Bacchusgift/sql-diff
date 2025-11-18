@@ -452,8 +452,51 @@ curl -X POST https://api.deepseek.com/v1/chat/completions \
   -d '{"model":"deepseek-chat","messages":[{"role":"user","content":"test"}]}'
 ```
 
+## Web 子命令
+
+启动 Web 可视化界面，通过浏览器进行表结构比对与 AI 操作：
+
+```bash
+# 启动 Web 服务（默认端口 8848）
+sql-diff web
+
+# 指定端口启动
+sql-diff web --port 9000
+
+# 查看帮助
+sql-diff web --help
+```
+
+### 功能特性
+
+- 🌐 **浏览器界面**：图形化操作，无需记忆命令
+- 🤖 **AI 集成**：页面内启用 AI 生成 CREATE/ALTER
+- 🌗 **主题切换**：支持浅色/深色模式
+- 🔒 **服务单例**：已运行时直接打开浏览器，避免重复启动
+- 🔌 **端口检测**：占用时自动寻找可用端口
+
+### 使用示例
+
+```bash
+# 基础使用
+sql-diff web
+
+# 服务启动后会自动打开浏览器
+# 访问 http://127.0.0.1:8848
+
+# 在浏览器中可以：
+# 1. 粘贴源表和目标表 SQL
+# 2. 启用 AI 智能分析
+# 3. 使用 AI 生成 CREATE TABLE
+# 4. 使用 AI 生成 ALTER TABLE
+# 5. 管理 AI 配置
+```
+
+详细说明请查看 [Web 可视化界面](/guide/web-ui) 文档。
+
 ## 下一步
 
 - [配置](/config/environment) - 详细配置说明
 - [AI 功能](/ai/guide) - AI 功能使用指南
 - [示例](/examples/basic) - 更多实际示例
+- [Web 界面](/guide/web-ui) - Web 可视化界面使用指南

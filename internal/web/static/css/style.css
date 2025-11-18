@@ -90,6 +90,87 @@
     }
 }
 
+/* 暗色模式全局样式优化 */
+[data-theme="dark"] {
+    color-scheme: dark;
+}
+
+[data-theme="dark"] body {
+    background-color: #0f172a;
+    color: #e2e8f0;
+}
+
+[data-theme="dark"] .bg-base-100 {
+    background-color: #1e293b !important;
+}
+
+[data-theme="dark"] .bg-base-200 {
+    background-color: #0f172a !important;
+}
+
+[data-theme="dark"] .bg-base-300 {
+    background-color: #334155 !important;
+}
+
+[data-theme="dark"] .text-base-content {
+    color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .card {
+    background-color: #1e293b !important;
+    color: #e2e8f0;
+}
+
+[data-theme="dark"] .textarea,
+[data-theme="dark"] .input,
+[data-theme="dark"] .select {
+    background-color: #0f172a !important;
+    border-color: #334155 !important;
+    color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .textarea::placeholder,
+[data-theme="dark"] .input::placeholder {
+    color: #64748b !important;
+}
+
+[data-theme="dark"] .label-text {
+    color: #cbd5e1 !important;
+}
+
+[data-theme="dark"] .table {
+    color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .table thead {
+    background-color: #0f172a !important;
+    color: #cbd5e1 !important;
+}
+
+[data-theme="dark"] .table tbody tr {
+    background-color: #1e293b !important;
+}
+
+[data-theme="dark"] .table tbody tr:hover {
+    background-color: #334155 !important;
+}
+
+[data-theme="dark"] .alert {
+    color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .btn {
+    color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .divider {
+    color: #cbd5e1 !important;
+}
+
+[data-theme="dark"] code {
+    color: #e2e8f0 !important;
+}
+
 :root {
     --primary-color: #3b82f6;
     --primary-hover: #2563eb;

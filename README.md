@@ -72,6 +72,24 @@ ALTER TABLE users ADD INDEX idx_email (email);
 - 📝 结构化的结果展示
 - 💾 支持输出到文件
 
+### 🌐 Web 界面
+现代化的浏览器界面，支持图形化表结构比对与 AI 操作：
+
+```bash
+# 启动 Web 服务（默认端口 8848）
+sql-diff web
+
+# 指定端口启动
+sql-diff web --port 9000
+```
+
+**功能点：**
+- ✅ 自动打开浏览器
+- ✅ 端口占用自动切换
+- ✅ 服务单例检测
+- ✅ 浅色/深色主题切换
+- ✅ AI 功能集成
+
 ## 📚 文档
 
 **🌐 完整文档网站：[https://bacchusgift.github.io/sql-diff/](https://bacchusgift.github.io/sql-diff/)**
