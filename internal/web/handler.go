@@ -79,24 +79,24 @@ type ParseCreateRequest struct {
 
 // ParseCreateResponse SQL解析响应
 type ParseCreateResponse struct {
-	Success   bool              `json:"success"`
-	TableName string            `json:"table_name,omitempty"`
-	Columns   []ColumnInfo      `json:"columns,omitempty"`
-	Error     string            `json:"error,omitempty"`
+	Success   bool         `json:"success"`
+	TableName string       `json:"table_name,omitempty"`
+	Columns   []ColumnInfo `json:"columns,omitempty"`
+	Error     string       `json:"error,omitempty"`
 }
 
 // ColumnInfo 列信息
 type ColumnInfo struct {
-	Name       string `json:"name"`
-	Type       string `json:"type"`
-	Length     string `json:"length,omitempty"`
-	Default    string `json:"default,omitempty"`
-	Nullable   bool   `json:"nullable"`
-	IsPrimary  bool   `json:"is_primary"`
-	IsUnique   bool   `json:"is_unique"`
-	Comment    string `json:"comment,omitempty"`
-	AutoInc    bool   `json:"auto_inc"`
-	Unsigned   bool   `json:"unsigned"`
+	Name      string `json:"name"`
+	Type      string `json:"type"`
+	Length    string `json:"length,omitempty"`
+	Default   string `json:"default,omitempty"`
+	Nullable  bool   `json:"nullable"`
+	IsPrimary bool   `json:"is_primary"`
+	IsUnique  bool   `json:"is_unique"`
+	Comment   string `json:"comment,omitempty"`
+	AutoInc   bool   `json:"auto_inc"`
+	Unsigned  bool   `json:"unsigned"`
 }
 
 // handleConfig 处理配置相关请求

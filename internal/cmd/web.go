@@ -70,7 +70,7 @@ func runWeb(cmd *cobra.Command, args []string) error {
 		successColor.Printf("✓ 服务已在运行中 (PID: %d, 端口: %d)\n", info.PID, info.Port)
 		fmt.Println()
 		infoColor.Println("🌐 正在打开浏览器...")
-		
+
 		url := fmt.Sprintf("http://127.0.0.1:%d", info.Port)
 		if err := openBrowser(url); err != nil {
 			fmt.Println()
@@ -79,13 +79,13 @@ func runWeb(cmd *cobra.Command, args []string) error {
 			fmt.Println()
 			successColor.Println("✓ 浏览器已打开")
 		}
-		
+
 		return nil
 	}
 
 	// 服务未运行,启动新服务
 	port := webPort
-	
+
 	// 查找可用端口
 	availablePort, err := web.FindAvailablePort(port, 10)
 	if err != nil {
